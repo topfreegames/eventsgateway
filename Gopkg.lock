@@ -2,38 +2,10 @@
 
 
 [[projects]]
-  name = "github.com/aws/aws-sdk-go"
-  packages = [
-    "aws",
-    "aws/awserr",
-    "aws/awsutil",
-    "aws/client",
-    "aws/client/metadata",
-    "aws/credentials",
-    "aws/endpoints",
-    "aws/request",
-    "aws/signer/v4",
-    "internal/shareddefaults",
-    "private/protocol",
-    "private/protocol/json/jsonutil",
-    "private/protocol/jsonrpc",
-    "private/protocol/rest",
-    "service/kinesis"
-  ]
-  revision = "0cebc639926eb91b0192dae4b28bc808417e764c"
-  version = "v1.12.61"
-
-[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "629574ca2a5df945712d3079857300b5e4da0236"
   version = "v1.4.2"
-
-[[projects]]
-  name = "github.com/go-ini/ini"
-  packages = ["."]
-  revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
-  version = "v1.32.0"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -68,11 +40,6 @@
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
-
-[[projects]]
-  name = "github.com/jmespath/go-jmespath"
-  packages = ["."]
-  revision = "0b12d6b5"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -180,6 +147,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e2f2c0d4e2e46f87c6821573eab007296f0b4bcabc9f80bac6780dcd34ff7809"
+  inputs-digest = "f67973a04a1bee33da5332da7cce2e78d553da13638cc14d0dc2070d87eb63f6"
   solver-name = "gps-cdcl"
   solver-version = 1
