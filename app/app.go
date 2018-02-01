@@ -105,16 +105,20 @@ func (a *App) MetricsReporterInterceptor(
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 
+	l := a.log.WithField("route", info.FullMethod)
+
 	startTime := time.Now()
 
 	defer func() {
 		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
 		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod).Observe(timeUsed)
+		l.WithField("timeUsed", timeUsed).Debug("request processed")
 	}()
 
 	res, err := handler(ctx, req)
 
 	if err != nil {
+		l.WithError(err).Error("error processing request")
 		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, err.Error()).Inc()
 	} else {
 		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod).Inc()

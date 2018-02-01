@@ -100,7 +100,6 @@ func (s *Server) SendEvent(ctx context.Context, event *pb.Event) (*pb.Response, 
 	partition, offset, err := s.producer.Produce(topic, buf.Bytes())
 
 	if err != nil {
-		s.log.WithError(err).Errorf("error sending event to kafka")
 		return nil, status.Errorf(status.Code(err), err.Error())
 	}
 	s.log.WithFields(logrus.Fields{
