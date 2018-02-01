@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"git.topfreegames.com/eventsgateway/middleware"
+	"github.com/topfreegames/eventsgateway/middleware"
 )
 
 //HealthcheckHandler handler

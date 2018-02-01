@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"git.topfreegames.com/eventsgateway/forwarder"
-	"git.topfreegames.com/eventsgateway/middleware"
+	"github.com/topfreegames/eventsgateway/forwarder"
+	"github.com/topfreegames/eventsgateway/middleware"
 )
 
 //EventsHandler handler

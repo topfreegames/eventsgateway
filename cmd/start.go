@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"git.topfreegames.com/eventsgateway/api"
+	"github.com/topfreegames/eventsgateway/api"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

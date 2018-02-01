@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"git.topfreegames.com/eventsgateway/forwarder"
-	"git.topfreegames.com/eventsgateway/middleware"
+	"github.com/topfreegames/eventsgateway/forwarder"
+	"github.com/topfreegames/eventsgateway/middleware"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"

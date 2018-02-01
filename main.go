@@ -14,7 +14,7 @@
 
 package main
 
-import "git.topfreegames.com/eventsgateway/cmd"
+import "github.com/topfreegames/eventsgateway/cmd"
 
 func main() {
 	cmd.Execute()
