@@ -32,6 +32,14 @@ build:
 build-docker:
 	@docker build -t eventsgateway .
 
+deps-start:
+	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
+	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d
+	@echo "Dependencies started successfully."
+
+deps-stop:
+	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway down
+
 cross-build-linux-amd64:
 	@env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/eventsgateway-linux-amd64
 	@chmod a+x ./bin/eventsgateway-linux-amd64
