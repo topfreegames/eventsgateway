@@ -44,7 +44,10 @@ func (s *Server) loadConfigurationDefaults() {
 
 // SendEvent sends a event to kafka
 func (s *Server) SendEvent(ctx context.Context, event *pb.Event) (*pb.Response, error) {
-	l := s.log.WithField("topic", event.GetTopic())
+	l := s.log.WithFields(logrus.Fields{
+		"topic": event.GetTopic(),
+		"event": event,
+	})
 
 	l.Debugf("received event with id: %s, name: %s, topic: %s, props: %s",
 		event.GetId(),
@@ -62,11 +65,11 @@ func (s *Server) SendEvent(ctx context.Context, event *pb.Event) (*pb.Response, 
 
 	var buf bytes.Buffer
 
-	l.WithField("event", a).Debugf("serializing event")
+	l.Debugf("serializing event")
 	err := a.Serialize(&buf)
 
 	if err != nil {
-		l.WithField("event", a).Warnf("error serializing event")
+		l.Warnf("error serializing event")
 		return nil, status.Errorf(status.Code(err), err.Error())
 	}
 
@@ -79,10 +82,9 @@ func (s *Server) SendEvent(ctx context.Context, event *pb.Event) (*pb.Response, 
 		return nil, status.Errorf(status.Code(err), err.Error())
 	}
 	s.log.WithFields(logrus.Fields{
-		"event":     string(buf.Bytes()),
 		"partition": partition,
 		"offset":    offset,
 	}).Debug("event sent to kafka")
 
-	return nil, nil
+	return &pb.Response{}, nil
 }
