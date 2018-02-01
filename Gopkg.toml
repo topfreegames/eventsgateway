@@ -31,3 +31,15 @@
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"
   version = "1.12.61"
+
+[[constraint]]
+  name = "github.com/topfreegames/protos"
+  version = "1.4.0"
+
+[[constraint]]
+  name = "github.com/Shopify/sarama"
+  version = "1.15.0"
+
+[[constraint]]
+  name = "github.com/topfreegames/extensions"
+  version = "5.0.0"

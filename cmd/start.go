@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/topfreegames/eventsgateway/api"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/topfreegames/eventsgateway/app"
 )
 
 var host string
@@ -19,7 +19,7 @@ var startCmd = &cobra.Command{
 		if debug {
 			log.SetLevel(logrus.DebugLevel)
 		}
-		a, err := api.NewApp(host, port, log)
+		a, err := app.NewApp(host, port, log, config)
 		if err != nil {
 			log.Panic(err)
 		}

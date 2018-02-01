@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -10,6 +11,7 @@ import (
 
 var cfgFile string
 var debug bool
+var config *viper.Viper
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -31,21 +33,24 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug toggle")
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.TFGEventsGateway.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./config/local.yaml", "config file")
 	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	config = viper.New()
 	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
+		config.SetConfigFile(cfgFile)
 	}
 
-	viper.SetConfigName(".TFGEventsGateway")
-	viper.AddConfigPath(os.Getenv("HOME"))
-	viper.AutomaticEnv()
+	config.SetConfigType("yaml")
+	config.SetEnvPrefix("eventsforwarder")
+	config.AddConfigPath(".")
+	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	config.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := config.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", config.ConfigFileUsed())
 	}
 }
