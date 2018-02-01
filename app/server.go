@@ -33,6 +33,7 @@ import (
 	avro "github.com/topfreegames/avro/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/forwarder"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -71,6 +72,13 @@ func (s *Server) SendEvent(ctx context.Context, event *pb.Event) (*pb.Response, 
 		"event": event,
 	})
 
+	if event.GetId() == "" ||
+		event.GetTopic() == "" ||
+		event.GetName() == "" ||
+		event.GetTimestamp() == int64(0) {
+		return nil, status.Errorf(codes.FailedPrecondition, "id, topic, name and timestamp should be set")
+	}
+
 	l.Debugf("received event with id: %s, name: %s, topic: %s, props: %s",
 		event.GetId(),
 		event.GetName(),
@@ -84,6 +92,7 @@ func (s *Server) SendEvent(ctx context.Context, event *pb.Event) (*pb.Response, 
 	a.Props = event.GetProps()
 
 	a.ServerTimestamp = time.Now().UnixNano() / int64(time.Millisecond)
+	a.ClientTimestamp = event.GetTimestamp()
 
 	var buf bytes.Buffer
 
