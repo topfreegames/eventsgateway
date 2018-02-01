@@ -1,0 +1,141 @@
+// eventsgateway
+// +build unit
+// https://github.com/topfreegames/eventsgateway
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2017 Top Free Games <backend@tfgco.com>
+
+package client_test
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/topfreegames/eventsgateway/client"
+	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("Client", func() {
+	var (
+		c   *client.GRPCClient
+		now int64
+	)
+	name := "EventName"
+	props := map[string]string{
+		"prop1": "val1",
+		"prop2": "val2",
+	}
+
+	BeforeEach(func() {
+		var err error
+		c, err = client.NewClient("", config, logger, mockGRPCClient)
+		Expect(err).NotTo(HaveOccurred())
+		now = time.Now().UnixNano() / int64(time.Millisecond)
+	})
+
+	Describe("NewClient", func() {
+		It("should return client if no error", func() {
+			c, err := client.NewClient("", config, logger, mockGRPCClient)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+		})
+
+		It("should return an error if no kafka topic", func() {
+			config.Set("client.kafkatopic", "")
+			c, err := client.NewClient("", config, logger, mockGRPCClient)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("no kafka topic informed"))
+			Expect(c).To(BeNil())
+		})
+
+		It("should return an error if no server address", func() {
+			config.Set("client.grpc.serveraddress", "")
+			c, err := client.NewClient("", config, logger, mockGRPCClient)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("no grpc server address informed"))
+			Expect(c).To(BeNil())
+		})
+	})
+
+	Describe("Send", func() {
+		var (
+			c   *client.GRPCClient
+			now int64
+		)
+		name := "EventName"
+		props := map[string]string{
+			"prop1": "val1",
+			"prop2": "val2",
+		}
+
+		BeforeEach(func() {
+			var err error
+			c, err = client.NewClient("", config, logger, mockGRPCClient)
+			Expect(err).NotTo(HaveOccurred())
+			now = time.Now().UnixNano() / int64(time.Millisecond)
+		})
+
+		It("should send event to configured topic", func() {
+			mockGRPCClient.EXPECT().SendEvent(
+				gomock.Any(),
+				gomock.Any(),
+			).Do(func(ctx context.Context, event *pb.Event) {
+				Expect(event.Id).NotTo(BeEmpty())
+				Expect(event.Name).To(Equal(name))
+				Expect(event.Topic).To(Equal("default-topic"))
+				Expect(event.Props).To(Equal(props))
+				Expect(event.Timestamp).To(BeNumerically("~", now, 100))
+			}).Return(nil, nil)
+
+			err := c.Send(name, props)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail if event forward fails", func() {
+			mockGRPCClient.EXPECT().SendEvent(
+				gomock.Any(),
+				gomock.Any(),
+			).Return(nil, errors.New("olar"))
+
+			err := c.Send(name, props)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("olar"))
+		})
+	})
+
+	Describe("SendToTopic", func() {
+		It("should send event to specific topic", func() {
+			topic := "custom-topic"
+			mockGRPCClient.EXPECT().SendEvent(
+				gomock.Any(),
+				gomock.Any(),
+			).Do(func(ctx context.Context, event *pb.Event) {
+				Expect(event.Id).NotTo(BeEmpty())
+				Expect(event.Name).To(Equal(name))
+				Expect(event.Topic).To(Equal(topic))
+				Expect(event.Props).To(Equal(props))
+				Expect(event.Timestamp).To(BeNumerically("~", now, 100))
+			}).Return(nil, nil)
+
+			err := c.SendToTopic(name, topic, props)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail if event forward fails", func() {
+			mockGRPCClient.EXPECT().SendEvent(
+				gomock.Any(),
+				gomock.Any(),
+			).Return(nil, errors.New("olar"))
+
+			err := c.Send(name, props)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("olar"))
+		})
+	})
+})

@@ -1,0 +1,22 @@
+mode: atomic
+github.com/topfreegames/eventsgateway/client/client.go:33.83,49.2 4 4
+github.com/topfreegames/eventsgateway/client/client.go:52.71,59.16 4 3
+github.com/topfreegames/eventsgateway/client/client.go:62.2,63.12 2 3
+github.com/topfreegames/eventsgateway/client/client.go:59.16,61.3 1 2
+github.com/topfreegames/eventsgateway/client/client.go:67.85,75.16 4 1
+github.com/topfreegames/eventsgateway/client/client.go:78.2,79.12 2 1
+github.com/topfreegames/eventsgateway/client/client.go:75.16,77.3 1 0
+github.com/topfreegames/eventsgateway/client/client.go:82.90,83.65 1 12
+github.com/topfreegames/eventsgateway/client/client.go:86.2,87.19 2 12
+github.com/topfreegames/eventsgateway/client/client.go:91.2,92.27 2 11
+github.com/topfreegames/eventsgateway/client/client.go:96.2,102.19 2 10
+github.com/topfreegames/eventsgateway/client/client.go:107.2,113.16 4 0
+github.com/topfreegames/eventsgateway/client/client.go:116.2,117.12 2 0
+github.com/topfreegames/eventsgateway/client/client.go:83.65,85.3 1 0
+github.com/topfreegames/eventsgateway/client/client.go:87.19,89.3 1 1
+github.com/topfreegames/eventsgateway/client/client.go:92.27,94.3 1 1
+github.com/topfreegames/eventsgateway/client/client.go:102.19,105.3 2 10
+github.com/topfreegames/eventsgateway/client/client.go:113.16,115.3 1 0
+github.com/topfreegames/eventsgateway/client/client.go:121.134,127.16 3 12
+github.com/topfreegames/eventsgateway/client/client.go:131.2,131.15 1 10
+github.com/topfreegames/eventsgateway/client/client.go:127.16,130.3 2 2

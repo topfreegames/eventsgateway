@@ -1,0 +1,13 @@
+extensions:
+  kafkaproducer:
+    brokers: localhost:9192
+    maxMessageBytes: 3000000
+client:
+  grpc:
+    serveraddress: localhost:8888
+  kafkatopic: default-topic
+sentry:
+  url: ""
+newrelic:
+  app: "eventsgateway"
+  key: ""
