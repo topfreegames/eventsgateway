@@ -45,7 +45,8 @@ cross-build-linux-amd64:
 	@chmod a+x ./bin/eventsgateway-linux-amd64
 
 run:
-	@go run main.go start
+	@echo "Will connect to kafka at ${MY_IP}:9192"
+	@env EVENTSGATEWAY_EXTENSIONS_KAFKAPRODUCER_BROKERS=${MY_IP}:9192 go run main.go start
 
 unit: unit-board clear-coverage-profiles unit-run gather-unit-profiles
 

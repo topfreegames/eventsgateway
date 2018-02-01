@@ -45,7 +45,7 @@ func initConfig() {
 	}
 
 	config.SetConfigType("yaml")
-	config.SetEnvPrefix("eventsforwarder")
+	config.SetEnvPrefix("eventsgateway")
 	config.AddConfigPath(".")
 	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	config.AutomaticEnv()
