@@ -1,8 +1,35 @@
+// MIT License
+//
+// Copyright (c) 2018 Top Free Games
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
+	"os"
+	"time"
+
+	"github.com/topfreegames/eventsgateway/metrics"
 
 	"google.golang.org/grpc"
 
@@ -13,6 +40,10 @@ import (
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	hostname, _ = os.Hostname()
 )
 
 // App is the app structure
@@ -66,6 +97,32 @@ func (a *App) configureEventsForwarder() error {
 	return nil
 }
 
+// MetricsReporterInterceptor interceptor
+func (a *App) MetricsReporterInterceptor(
+	ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (interface{}, error) {
+
+	startTime := time.Now()
+
+	defer func() {
+		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
+		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod).Observe(timeUsed)
+	}()
+
+	res, err := handler(ctx, req)
+
+	if err != nil {
+		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, err.Error()).Inc()
+	} else {
+		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod).Inc()
+	}
+
+	return res, err
+}
+
 // Run runs the app
 func (a *App) Run() {
 	log := a.log
@@ -74,7 +131,11 @@ func (a *App) Run() {
 		log.Panic(err.Error())
 	}
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
-	grpcServer := grpc.NewServer()
+
+	var opts []grpc.ServerOption
+	opts = append(opts, grpc.UnaryInterceptor(a.MetricsReporterInterceptor))
+	grpcServer := grpc.NewServer(opts...)
+
 	pb.RegisterGRPCForwarderServer(grpcServer, a.server)
 
 	grpcServer.Serve(listener)
