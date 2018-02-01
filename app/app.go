@@ -62,7 +62,7 @@ func (a *App) configureEventsForwarder() error {
 	if err != nil {
 		return err
 	}
-	a.server = NewServer(k, a.log)
+	a.server = NewServer(k, a.log, a.config)
 	return nil
 }
 

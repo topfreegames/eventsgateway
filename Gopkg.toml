@@ -34,7 +34,7 @@
 
 [[constraint]]
   name = "github.com/topfreegames/protos"
-  version = "1.4.0"
+  version = "1.4.2"
 
 [[constraint]]
   name = "github.com/Shopify/sarama"
@@ -43,3 +43,7 @@
 [[constraint]]
   name = "github.com/topfreegames/extensions"
   version = "5.0.0"
+
+[[constraint]]
+  name = "github.com/topfreegames/avro"
+  version = "1.0.1"

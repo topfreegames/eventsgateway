@@ -19,6 +19,9 @@ var startCmd = &cobra.Command{
 		if debug {
 			log.SetLevel(logrus.DebugLevel)
 		}
+		if json {
+			log.Formatter = new(logrus.JSONFormatter)
+		}
 		a, err := app.NewApp(host, port, log, config)
 		if err != nil {
 			log.Panic(err)

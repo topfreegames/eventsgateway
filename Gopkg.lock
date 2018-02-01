@@ -201,6 +201,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/topfreegames/avro"
+  packages = ["eventsgateway/generated"]
+  revision = "3b711de5349e0f2bbfbc3c7dd5cad733bcacca71"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/topfreegames/extensions"
   packages = [
     "kafka",
@@ -213,8 +219,8 @@
 [[projects]]
   name = "github.com/topfreegames/protos"
   packages = ["eventsgateway/grpc/generated"]
-  revision = "9db5cb124c45089b4e20091668b636b396b0ea4f"
-  version = "v1.4.1"
+  revision = "5974072d5521b4296a78c6fe5e18a1d1d683f98d"
+  version = "v1.4.2"
 
 [[projects]]
   branch = "master"
@@ -310,6 +316,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "190e8f23552702df28fec5772341073586070aa956d9a3eff885cf90cb191f2a"
+  inputs-digest = "a8d3936f75c57fc16a219e68068455d66ebce56c93c4a1584112b7102721a47c"
   solver-name = "gps-cdcl"
   solver-version = 1
