@@ -1,0 +1,16 @@
+language: go
+go:
+- 1.9
+sudo: false
+services:
+- docker
+env:
+  matrix:
+  - LIBRDKAFKA_VERSION=v0.11.3
+cache:
+  directories:
+  - "$HOME/.cache/librdkafka"
+before_install:
+- sudo /bin/bash ./travis.sh
+before_script: make setup-ci
+script: make test
