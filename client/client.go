@@ -156,7 +156,6 @@ func (g *GRPCClient) configure(configPrefix string, client pb.GRPCForwarderClien
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(g.MetricsReporterInterceptor),
 	)
-	fmt.Println(conn, err)
 	if err != nil {
 		return err
 	}
