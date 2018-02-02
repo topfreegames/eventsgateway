@@ -13,4 +13,4 @@ cache:
 before_install:
 - sudo /bin/bash ./travis.sh
 before_script: make setup-ci
-script: make test
+script: make test-ci
