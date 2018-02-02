@@ -53,7 +53,7 @@ var startCmd = &cobra.Command{
 }
 
 func init() {
-	startCmd.Flags().StringVarP(&host, "host", "b", "127.0.0.1", "the address of the interface to bind")
+	startCmd.Flags().StringVarP(&host, "host", "b", "0.0.0.0", "the address of the interface to bind")
 	startCmd.Flags().IntVarP(&port, "port", "p", 5000, "the port to bind")
 	RootCmd.AddCommand(startCmd)
 }
