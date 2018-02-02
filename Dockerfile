@@ -39,6 +39,8 @@ RUN apk add --no-cache make git g++ bash python wget && \
     ./configure && make && make install && make clean && ./configure --clean && \
     rm -rf /root/librdkafka-* && \
     cd /go/src/github.com/topfreegames/eventsgateway && \
+    go get -u github.com/golang/dep/cmd/dep && \
+    dep ensure && \
     make build && \
     mv bin/eventsgateway /app/eventsgateway && \
     mv config /app/config
