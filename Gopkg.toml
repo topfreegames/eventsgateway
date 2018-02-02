@@ -19,22 +19,13 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
-
 [[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.6.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/golang/glog"
-
-[[constraint]]
-  name = "github.com/aws/aws-sdk-go"
-  version = "1.12.61"
-
-[[constraint]]
   name = "github.com/topfreegames/protos"
-  version = "1.4.2"
+  version = "1.4.4"
 
 [[constraint]]
   name = "github.com/Shopify/sarama"
