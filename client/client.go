@@ -103,7 +103,7 @@ func (g *GRPCClient) MetricsReporterInterceptor(
 	event := req.(*pb.Event)
 
 	defer func() {
-		timeUsed := float64(time.Since(startTime).Nanoseconds() / 1000 * 1000)
+		timeUsed := float64(time.Since(startTime).Nanoseconds() / int64(time.Millisecond))
 		metrics.ClientRequestsResponseTime.WithLabelValues(hostname, method, event.GetTopic()).Observe(timeUsed)
 		l.WithFields(log.Fields{
 			"timeUsed": timeUsed,

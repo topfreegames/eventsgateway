@@ -96,7 +96,7 @@ var (
 		Namespace: "eventsgateway",
 		Subsystem: "client",
 		Name:      "requests_failure_counter",
-		Help:      "the count of successfull client requests to the server",
+		Help:      "the count of failed client requests to the server",
 	},
 		[]string{"clientHost", "route", "topic", "reason"},
 	)
