@@ -106,12 +106,13 @@ func (a *App) MetricsReporterInterceptor(
 ) (interface{}, error) {
 
 	l := a.log.WithField("route", info.FullMethod)
+	ev := req.(*pb.Event)
 
 	startTime := time.Now()
 
 	defer func() {
 		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
-		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod).Observe(timeUsed)
+		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod, ev.GetTopic()).Observe(timeUsed)
 		l.WithField("timeUsed", timeUsed).Debug("request processed")
 	}()
 
@@ -119,9 +120,9 @@ func (a *App) MetricsReporterInterceptor(
 
 	if err != nil {
 		l.WithError(err).Error("error processing request")
-		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, err.Error()).Inc()
+		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, ev.GetTopic(), err.Error()).Inc()
 	} else {
-		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod).Inc()
+		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod, ev.GetTopic()).Inc()
 	}
 
 	return res, err

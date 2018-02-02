@@ -45,7 +45,7 @@ var (
 			Help:       "the response time in ms of api routes",
 			Objectives: map[float64]float64{0.7: 0.02, 0.95: 0.005, 0.99: 0.001},
 		},
-		[]string{"hostname", "route"},
+		[]string{"hostname", "route", "topic"},
 	)
 
 	// APIRequestsSuccessCounter counter
@@ -56,7 +56,7 @@ var (
 			Name:      "requests_success_counter",
 			Help:      "A counter of succeeded api requests",
 		},
-		[]string{"hostname", "route"},
+		[]string{"hostname", "route", "topic"},
 	)
 
 	// APIRequestsFailureCounter counter
@@ -67,12 +67,50 @@ var (
 			Name:      "requests_failure_counter",
 			Help:      "A counter of failed api requests",
 		},
-		[]string{"hostname", "route", "reason"},
+		[]string{"hostname", "route", "topic", "reason"},
+	)
+
+	// ClientRequestsResponseTime is the time the client take to talk to the server
+	ClientRequestsResponseTime = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Namespace:  "eventsgateway",
+		Subsystem:  "client",
+		Name:       "response_time_ms",
+		Help:       "the response time in ms of calls to server",
+		Objectives: map[float64]float64{0.7: 0.02, 0.95: 0.005, 0.99: 0.001},
+	},
+		[]string{"clientHost", "route", "topic"},
+	)
+
+	// ClientRequestsSuccessCounter is the count of successfull calls to the server
+	ClientRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "eventsgateway",
+		Subsystem: "client",
+		Name:      "requests_success_counter",
+		Help:      "the count of successfull client requests to the server",
+	},
+		[]string{"clientHost", "route", "topic"},
+	)
+
+	// ClientRequestsFailureCounter is the count of failed calls to the server
+	ClientRequestsFailureCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "eventsgateway",
+		Subsystem: "client",
+		Name:      "requests_failure_counter",
+		Help:      "the count of successfull client requests to the server",
+	},
+		[]string{"clientHost", "route", "topic", "reason"},
 	)
 )
 
 func init() {
-	prometheus.MustRegister(APIResponseTime, APIRequestsFailureCounter, APIRequestsSuccessCounter)
+	prometheus.MustRegister(
+		APIResponseTime,
+		APIRequestsFailureCounter,
+		APIRequestsSuccessCounter,
+		ClientRequestsResponseTime,
+		ClientRequestsSuccessCounter,
+		ClientRequestsFailureCounter,
+	)
 	port := ":9090"
 	if envPort, ok := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_PORT"); ok {
 		port = fmt.Sprintf(":%s", envPort)

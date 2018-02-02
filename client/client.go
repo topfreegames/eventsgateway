@@ -10,15 +10,21 @@ package client
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
+)
+
+var (
+	hostname, _ = os.Hostname()
 )
 
 // GRPCClient struct
@@ -79,6 +85,43 @@ func (g *GRPCClient) SendToTopic(name, topic string, props map[string]string) er
 	return err
 }
 
+// MetricsReporterInterceptor will report metrics from client
+func (g *GRPCClient) MetricsReporterInterceptor(
+	ctx context.Context,
+	method string,
+	req interface{},
+	reply interface{},
+	cc *grpc.ClientConn,
+	invoker grpc.UnaryInvoker,
+	opts ...grpc.CallOption,
+) error {
+	l := g.logger.WithFields(log.Fields{
+		"method": method,
+	})
+
+	startTime := time.Now()
+	event := req.(*pb.Event)
+
+	defer func() {
+		timeUsed := float64(time.Since(startTime).Nanoseconds() / 1000 * 1000)
+		metrics.ClientRequestsResponseTime.WithLabelValues(hostname, method, event.GetTopic()).Observe(timeUsed)
+		l.WithFields(log.Fields{
+			"timeUsed": timeUsed,
+			"reply":    reply.(*pb.Response),
+		}).Debug("request processed")
+	}()
+
+	err := invoker(ctx, method, req, reply, cc, opts...)
+
+	if err != nil {
+		l.WithError(err).Error("error processing request")
+		metrics.ClientRequestsFailureCounter.WithLabelValues(hostname, method, event.GetTopic(), err.Error()).Inc()
+	} else {
+		metrics.ClientRequestsSuccessCounter.WithLabelValues(hostname, method, event.GetTopic()).Inc()
+	}
+	return err
+}
+
 func (g *GRPCClient) configure(configPrefix string, client pb.GRPCForwarderClient) error {
 	if configPrefix != "" && !strings.HasSuffix(configPrefix, ".") {
 		configPrefix = strings.Join([]string{configPrefix, "."}, "")
@@ -108,7 +151,11 @@ func (g *GRPCClient) configure(configPrefix string, client pb.GRPCForwarderClien
 		"operation":    "configure",
 		"serverAdress": g.serverAddress,
 	}).Info("connecting to grpc server")
-	conn, err := grpc.Dial(g.serverAddress, grpc.WithInsecure())
+	conn, err := grpc.Dial(
+		g.serverAddress,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(g.MetricsReporterInterceptor),
+	)
 	fmt.Println(conn, err)
 	if err != nil {
 		return err
