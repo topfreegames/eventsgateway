@@ -111,7 +111,7 @@ func init() {
 		ClientRequestsSuccessCounter,
 		ClientRequestsFailureCounter,
 	)
-	port := ":9090"
+	port := ":9091"
 	if envPort, ok := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_PORT"); ok {
 		port = fmt.Sprintf(":%s", envPort)
 	}
