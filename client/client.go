@@ -59,12 +59,12 @@ func (g *GRPCClient) Send(name string, props map[string]string) error {
 		"operation": "send",
 		"event":     name,
 	})
-	l.Info("sending event")
+	l.Debug("sending event")
 	err := g.sendEvent(name, g.topic, props)
 	if err != nil {
 		l.WithError(err).Error("send event failed")
 	}
-	l.Info("successfully sended event")
+	l.Debug("successfully sended event")
 	return err
 }
 
@@ -75,12 +75,12 @@ func (g *GRPCClient) SendToTopic(name, topic string, props map[string]string) er
 		"event":     name,
 		"topic":     topic,
 	})
-	l.Info("sending event")
+	l.Debug("sending event")
 	err := g.sendEvent(name, topic, props)
 	if err != nil {
 		l.WithError(err).Error("send event failed")
 	}
-	l.Info("successfully sended event")
+	l.Debug("successfully sended event")
 	return err
 }
 
