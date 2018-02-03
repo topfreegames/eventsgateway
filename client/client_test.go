@@ -50,7 +50,7 @@ var _ = Describe("Client", func() {
 			config.Set("client.kafkatopic", "")
 			c, err := client.NewClient("", config, logger, mockGRPCClient)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("no kafka topic informed"))
+			Expect(err.Error()).To(ContainSubstring("no kafka topic informed"))
 			Expect(c).To(BeNil())
 		})
 
@@ -58,7 +58,7 @@ var _ = Describe("Client", func() {
 			config.Set("client.grpc.serveraddress", "")
 			c, err := client.NewClient("", config, logger, mockGRPCClient)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("no grpc server address informed"))
+			Expect(err.Error()).To(ContainSubstring("no grpc server address informed"))
 			Expect(c).To(BeNil())
 		})
 	})

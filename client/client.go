@@ -8,7 +8,6 @@
 package client
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -126,14 +125,16 @@ func (g *GRPCClient) configure(configPrefix string, client pb.GRPCForwarderClien
 	if configPrefix != "" && !strings.HasSuffix(configPrefix, ".") {
 		configPrefix = strings.Join([]string{configPrefix, "."}, "")
 	}
-	g.topic = g.config.GetString(fmt.Sprintf("%sclient.kafkatopic", configPrefix))
+	topicConf := fmt.Sprintf("%sclient.kafkatopic", configPrefix)
+	g.topic = g.config.GetString(topicConf)
 	if g.topic == "" {
-		return errors.New("no kafka topic informed")
+		return fmt.Errorf("no kafka topic informed at %s", topicConf)
 	}
 
-	g.serverAddress = g.config.GetString(fmt.Sprintf("%sclient.grpc.serveraddress", configPrefix))
+	serverConf := fmt.Sprintf("%sclient.grpc.serveraddress", configPrefix)
+	g.serverAddress = g.config.GetString(serverConf)
 	if g.serverAddress == "" {
-		return errors.New("no grpc server address informed")
+		return fmt.Errorf("no grpc server address informed at %s", serverConf)
 	}
 
 	g.logger = g.logger.WithFields(log.Fields{
