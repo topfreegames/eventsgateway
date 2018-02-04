@@ -8,7 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	avro "github.com/topfreegames/avro/eventsgateway/generated"
+	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/app"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
