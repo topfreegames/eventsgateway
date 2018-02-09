@@ -14,3 +14,4 @@ before_install:
 - sudo /bin/bash ./travis.sh
 before_script: make setup-ci
 script: make test-ci
+after_success: bash push_to_docker.sh
