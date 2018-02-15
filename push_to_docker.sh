@@ -7,6 +7,7 @@
 # http://www.opensource.org/licenses/mit-license
 # Copyright © 2018 Top Free Games <backend@tfgco.com>
 
+REPO=eventsgateway
 
 docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 
