@@ -75,7 +75,7 @@ func initConfig() {
 	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	config.AutomaticEnv()
 
-	if err := config.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", config.ConfigFileUsed())
+	if err := config.ReadInConfig(); err != nil {
+		fmt.Printf("Error loading config file: %s\n", config.ConfigFileUsed())
 	}
 }

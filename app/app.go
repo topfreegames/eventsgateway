@@ -71,6 +71,8 @@ func NewApp(host string, port int, log logrus.FieldLogger, config *viper.Viper) 
 func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("extensions.kafkaproducer.brokers", "localhost:9192")
 	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 3000000)
+	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1)
+	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 0)
 }
 
 func (a *App) configure() error {
@@ -87,6 +89,8 @@ func (a *App) configureEventsForwarder() error {
 	kafkaConf.Producer.Return.Errors = true
 	kafkaConf.Producer.Return.Successes = true
 	kafkaConf.Producer.MaxMessageBytes = a.config.GetInt("extensions.kafkaproducer.maxMessageBytes")
+	kafkaConf.Producer.Flush.Bytes = a.config.GetInt("extensions.kafkaproducer.batch.size")
+	kafkaConf.Producer.Flush.Frequency = time.Duration(a.config.GetInt("extensions.kafkaproducer.linger.ms")) * time.Millisecond
 	kafkaConf.Producer.RequiredAcks = sarama.WaitForLocal
 	kafkaConf.Producer.Compression = sarama.CompressionSnappy
 	k, err := extensions.NewSyncProducer(a.config, a.log.(*logrus.Logger), kafkaConf)
