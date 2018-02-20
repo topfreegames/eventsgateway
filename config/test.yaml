@@ -5,6 +5,7 @@ extensions:
 client:
   grpc:
     serveraddress: localhost:8888
+    timeoutms: 500
   kafkatopic: default-topic
 sentry:
   url: ""

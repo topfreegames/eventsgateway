@@ -33,6 +33,7 @@ type GRPCClient struct {
 	logger        log.FieldLogger
 	serverAddress string
 	topic         string
+	timeout       time.Duration
 }
 
 func (g *GRPCClient) sendEvent(name, topic string, props map[string]string) error {
@@ -49,7 +50,8 @@ func (g *GRPCClient) sendEvent(name, topic string, props map[string]string) erro
 		Timestamp: time.Now().UnixNano() / int64(time.Millisecond),
 	}
 
-	_, err := g.client.SendEvent(context.Background(), req)
+	ctx, _ := context.WithTimeout(context.Background(), g.timeout)
+	_, err := g.client.SendEvent(ctx, req)
 	return err
 }
 
@@ -137,10 +139,15 @@ func (g *GRPCClient) configure(configPrefix string, client pb.GRPCForwarderClien
 		return fmt.Errorf("no grpc server address informed at %s", serverConf)
 	}
 
+	timeoutConf := fmt.Sprintf("%sclient.grpc.timeoutms", configPrefix)
+	g.config.SetDefault(timeoutConf, 500)
+	g.timeout = g.config.GetDuration(timeoutConf) * time.Millisecond
+
 	g.logger = g.logger.WithFields(log.Fields{
 		"source":     "eventsgateway/client",
 		"topic":      g.topic,
 		"serverAddr": g.serverAddress,
+		"timeout":    g.timeout,
 	})
 
 	if client != nil {
