@@ -4,7 +4,7 @@ extensions:
     maxMessageBytes: 3000000
 client:
   grpc:
-    serveraddress: localhost:8888
+    serveraddress: localhost:5000
     timeoutms: 500
   kafkatopic: default-topic
 sentry:

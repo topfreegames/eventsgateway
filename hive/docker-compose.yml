@@ -1,0 +1,86 @@
+version: "3"
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    volumes:
+      - namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop-hive.env
+    ports:
+      - "50070:50070"
+    networks:
+      - eventsgateway
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    volumes:
+      - datanode:/hadoop/dfs/data
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    ports:
+      - "50075:50075"
+    networks:
+      - eventsgateway
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
+    ports:
+      - "10000:10000"
+    networks:
+      - eventsgateway
+    volumes:
+      - ./hive-site.xml:/opt/hive/conf/hive-site.xml
+      - ./hadoop-env.sh:/opt/hadoop-2.7.4/etc/hadoop/hadoop-env.sh
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432"
+    ports:
+      - "9083:9083"
+    networks:
+      - eventsgateway
+    volumes:
+      - ./hive-site.xml:/opt/hive/conf/hive-site.xml
+      - ./hadoop-env.sh:/opt/hadoop-2.7.4/etc/hadoop/hadoop-env.sh
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    networks:
+      - eventsgateway
+  presto-coordinator:
+    image: shawnzhu/prestodb:300
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./hive.properties:/home/presto/etc/catalog/hive.properties
+    networks:
+      - eventsgateway
+  eventsgatewaylocalproxy:
+    image: nginx
+    volumes:
+     - ./localstackproxy.template:/etc/nginx/conf.d/localstackproxy.template
+    environment:
+     - NGINX_HOST=eventsgatewaylocalproxy
+     - NGINX_PORT=80
+    networks:
+      - eventsgateway
+    command: /bin/bash -c "envsubst < /etc/nginx/conf.d/localstackproxy.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+
+volumes:
+  namenode:
+  datanode:
+
+networks:
+  eventsgateway: 
+    external:
+      name: eventsgateway

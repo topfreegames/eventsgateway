@@ -8,6 +8,8 @@
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
 TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 
+.PHONY: testclient gobblin
+
 setup: setup-hooks
 	@go get -u github.com/golang/dep...
 	@go get -u github.com/wadey/gocovmerge
@@ -31,7 +33,8 @@ build-docker:
 
 deps-start:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
-	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d
+	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d \
+		zookeeper kafka localstack 
 	@echo "Dependencies started successfully."
 
 deps-stop:
@@ -44,6 +47,26 @@ cross-build-linux-amd64:
 run:
 	@echo "Will connect to kafka at ${MY_IP}:9192"
 	@env EVENTSGATEWAY_EXTENSIONS_KAFKAPRODUCER_BROKERS=${MY_IP}:9192 go run main.go start -d
+
+testclient:
+	@echo "Will connect to server at ${MY_IP}:5000"
+	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go testclient -d
+
+hive-start:
+	@echo "Starting Hive stack using HOST IP of ${MY_IP}..."
+	@cd ./hive && docker-compose up
+	@echo "Hive stack started successfully."
+
+hive-stop:
+	@cd ./hive && docker-compose down
+
+gobblin:
+	@echo "Starting Gobblin using HOST IP of ${MY_IP}..."
+	@docker stop eventsgateway_gobblin_1
+	@mv ./gobblin/conf/events.pull.done ./gobblin/conf/events.pull
+	@rm -rf ./gobblin/work-dir && mkdir ./gobblin/work-dir
+	@env MY_IP=${MY_IP} docker-compose up gobblin
+	@echo "Gobblin started successfully."
 
 unit: unit-board clear-coverage-profiles unit-run gather-unit-profiles
 
