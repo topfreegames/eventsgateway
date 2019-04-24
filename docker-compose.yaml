@@ -8,7 +8,7 @@ services:
     networks:
       - eventsgateway
   kafka:
-    image: wurstmeister/kafka:1.0.0
+    image: wurstmeister/kafka:2.12-2.2.0
     ports:
       - "9192:9092"
     environment:
@@ -53,6 +53,14 @@ services:
       LOG_LEVEL: "DEBUG"
       GOBBLIN_PUBLISHER_PATH: "/output"
       FWDIR_LIB: "/opt/gobblin/gobblin-dist/lib"
+    networks:
+      - eventsgateway
+  pyspark-notebook:
+    image: jupyter/pyspark-notebook
+    ports:
+      - '8888:8888'
+    volumes:
+      - ./pyspark-notebook/work:/home/jovyan/work
     networks:
       - eventsgateway
 

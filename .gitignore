@@ -21,3 +21,4 @@ bin
 *.swp
 
 eventsgateway
+pyspark-notebook/work/.ipynb_checkpoints
