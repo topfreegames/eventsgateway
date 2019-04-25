@@ -23,6 +23,8 @@
 package testclient
 
 import (
+	"time"
+
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/client"
 
@@ -70,5 +72,6 @@ func (ct *TestClient) Run() {
 		println(err.Error())
 		return
 	}
+	time.Sleep(1 * time.Second)
 	println("done")
 }

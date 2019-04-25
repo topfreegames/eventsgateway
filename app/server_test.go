@@ -21,7 +21,8 @@ var _ = Describe("Client", func() {
 
 	BeforeEach(func() {
 		now = time.Now().UnixNano() / int64(time.Millisecond)
-		s = app.NewServer(mockForwarder, logger, config)
+		sender := app.NewSender(mockForwarder, logger, config)
+		s = app.NewServer(sender, logger)
 		Expect(s).NotTo(BeNil())
 	})
 

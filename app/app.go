@@ -97,12 +97,13 @@ func (a *App) configureEventsForwarder() error {
 	if err != nil {
 		return err
 	}
-	a.server = NewServer(k, a.log, a.config)
+	sender := NewSender(k, a.log, a.config)
+	a.server = NewServer(sender, a.log)
 	return nil
 }
 
-// MetricsReporterInterceptor interceptor
-func (a *App) MetricsReporterInterceptor(
+// metricsReporterInterceptor interceptor
+func (a *App) metricsReporterInterceptor(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
@@ -110,13 +111,12 @@ func (a *App) MetricsReporterInterceptor(
 ) (interface{}, error) {
 
 	l := a.log.WithField("route", info.FullMethod)
-	ev := req.(*pb.Event)
 
 	startTime := time.Now()
 
 	defer func() {
 		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
-		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod, ev.GetTopic()).Observe(timeUsed)
+		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod).Observe(timeUsed)
 		l.WithField("timeUsed", timeUsed).Debug("request processed")
 	}()
 
@@ -124,9 +124,9 @@ func (a *App) MetricsReporterInterceptor(
 
 	if err != nil {
 		l.WithError(err).Error("error processing request")
-		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, ev.GetTopic(), err.Error()).Inc()
+		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, err.Error()).Inc()
 	} else {
-		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod, ev.GetTopic()).Inc()
+		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod).Inc()
 	}
 
 	return res, err
@@ -142,7 +142,7 @@ func (a *App) Run() {
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
 	var opts []grpc.ServerOption
-	opts = append(opts, grpc.UnaryInterceptor(a.MetricsReporterInterceptor))
+	opts = append(opts, grpc.UnaryInterceptor(a.metricsReporterInterceptor))
 	grpcServer := grpc.NewServer(opts...)
 
 	pb.RegisterGRPCForwarderServer(grpcServer, a.server)
