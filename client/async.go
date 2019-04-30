@@ -230,6 +230,8 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		return
 	}
 	ctx, _ := context.WithTimeout(context.Background(), a.timeout)
+	// in case server's producer fail to send any event, failure indexes are sent
+	// in response to be retried
 	res, err := a.client.SendEvents(ctx, req)
 	if err != nil {
 		l.WithError(err).Error("failed to send events")

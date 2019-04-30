@@ -46,3 +46,7 @@
 [[override]]
   name = "google.golang.org/grpc"
 	version = "1.20.1"
+
+[[override]]
+  name = "golang.org/x/sys"
+	revision = "d89cdac9e8725f2aefce25fcbfef41134c9ad412"

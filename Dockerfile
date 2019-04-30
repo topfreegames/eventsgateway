@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-FROM golang:1.9-alpine
+FROM golang:1.12-alpine
 
 MAINTAINER TFG Co <backend@tfgco.com>
 
@@ -32,7 +32,7 @@ ENV LD_LIBRARY_PATH /usr/local/lib
 
 ADD . /go/src/github.com/topfreegames/eventsgateway
 
-RUN apk add --no-cache make git g++ bash python wget && \
+RUN apk add --no-cache make git g++ bash python wget pkgconfig && \
     wget -O /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz https://github.com/edenhill/librdkafka/archive/v${LIBRDKAFKA_VERSION}.tar.gz && \
     tar -xzf /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz -C /root && \
     cd /root/librdkafka-${LIBRDKAFKA_VERSION} && \

@@ -55,6 +55,8 @@ func (s *Server) SendEvent(
 	return &pb.SendEventResponse{}, nil
 }
 
+// SendEvents response might include FailureIndexes in case producer fails
+// to send all events
 func (s *Server) SendEvents(
 	ctx context.Context,
 	req *pb.SendEventsRequest,
