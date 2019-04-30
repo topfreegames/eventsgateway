@@ -137,9 +137,17 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 		"method": method,
 	})
 
+	events := req.(*pb.SendEventsRequest).Events
+
 	defer func(startTime time.Time) {
 		timeUsed := float64(time.Since(startTime).Nanoseconds() / 1000000)
-		metrics.ClientRequestsResponseTime.WithLabelValues(hostname, method).Observe(timeUsed)
+		for _, e := range events {
+			metrics.ClientRequestsResponseTime.WithLabelValues(
+				hostname,
+				method,
+				e.Topic,
+			).Observe(timeUsed)
+		}
 		l.WithFields(logrus.Fields{
 			"timeUsed": timeUsed,
 			"reply":    reply.(*pb.SendEventsResponse),
@@ -149,9 +157,22 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	err := invoker(ctx, method, req, reply, cc, opts...)
 	if err != nil {
 		l.WithError(err).Error("error processing request")
-		metrics.ClientRequestsFailureCounter.WithLabelValues(hostname, method, err.Error()).Inc()
+		for _, e := range events {
+			metrics.ClientRequestsFailureCounter.WithLabelValues(
+				hostname,
+				method,
+				e.Topic,
+				err.Error(),
+			).Inc()
+		}
 	} else {
-		metrics.ClientRequestsSuccessCounter.WithLabelValues(hostname, method).Inc()
+		for _, e := range events {
+			metrics.ClientRequestsSuccessCounter.WithLabelValues(
+				hostname,
+				method,
+				e.Topic,
+			).Inc()
+		}
 	}
 	return err
 }

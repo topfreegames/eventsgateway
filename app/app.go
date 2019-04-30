@@ -118,18 +118,47 @@ func (a *App) metricsReporterInterceptor(
 ) (interface{}, error) {
 	l := a.log.WithField("route", info.FullMethod)
 
+	events := []*pb.Event{}
+	switch t := req.(type) {
+	case *pb.Event:
+		events = append(events, req.(*pb.Event))
+	case *pb.SendEventsRequest:
+		events = append(events, req.(*pb.SendEventsRequest).Events...)
+	default:
+		l.Infof("Unexpected request type %T", t)
+	}
+
 	defer func(startTime time.Time) {
 		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000))
-		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod).Observe(timeUsed)
+		for _, e := range events {
+			metrics.APIResponseTime.WithLabelValues(
+				hostname,
+				info.FullMethod,
+				e.Topic,
+			).Observe(timeUsed)
+		}
 		l.WithField("timeUsed", timeUsed).Debug("request processed")
 	}(time.Now())
 
 	res, err := handler(ctx, req)
 	if err != nil {
 		l.WithError(err).Error("error processing request")
-		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, err.Error()).Inc()
+		for _, e := range events {
+			metrics.APIRequestsFailureCounter.WithLabelValues(
+				hostname,
+				info.FullMethod,
+				e.Topic,
+				err.Error(),
+			).Inc()
+		}
 	} else {
-		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod).Inc()
+		for _, e := range events {
+			metrics.APIRequestsSuccessCounter.WithLabelValues(
+				hostname,
+				info.FullMethod,
+				e.Topic,
+			).Inc()
+		}
 	}
 
 	return res, err
