@@ -400,15 +400,15 @@
   version = "v5.0.0"
 
 [[projects]]
-  digest = "1:f7fa8f94a7e12b43ce961daaa2a5dc62706898216ba18e60850f9c2547d6be95"
+  digest = "1:fc7b11db3d85965ff908abb864c2f59dd19c0428b553ab41e405a852ea5bb310"
   name = "github.com/topfreegames/protos"
   packages = [
     "eventsgateway/grpc/generated",
     "eventsgateway/grpc/mock",
   ]
   pruneopts = ""
-  revision = "ce6fdfcd0a3c173d991bd616958384e40c201666"
-  version = "v1.5.0"
+  revision = "4fd8bb192eaaa438f93126fea22cbe21f262b6bc"
+  version = "v1.6.0"
 
 [[projects]]
   branch = "master"
@@ -492,20 +492,31 @@
   revision = "4eb30f4778eed4c258ba66527a0d4f9ec8a36c45"
 
 [[projects]]
-  digest = "1:1c1ce3d4783796c0922d16dec8b0e9be02d383888e9126718e5a5db8baa3fe6d"
+  digest = "1:afc1b03a6d5ba3cbb2e0a12133e734d472e4df3b65f06e600a3d57a4b82f26cc"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
-    "grpclb/grpc_lb_v1/messages",
+    "encoding/proto",
     "grpclog",
     "internal",
+    "internal/backoff",
+    "internal/balancerload",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
     "keepalive",
     "metadata",
     "naming",
@@ -516,11 +527,10 @@
     "stats",
     "status",
     "tap",
-    "transport",
   ]
   pruneopts = ""
-  revision = "6b51017f791ae1cfbec89c52efdf444b13b550ef"
-  version = "v1.9.2"
+  revision = "25c4f928eaa6d96443009bd842389fb4fa48664e"
+  version = "v1.20.1"
 
 [[projects]]
   branch = "v2"
@@ -550,7 +560,6 @@
     "github.com/topfreegames/extensions/kafka",
     "github.com/topfreegames/protos/eventsgateway/grpc/generated",
     "github.com/topfreegames/protos/eventsgateway/grpc/mock",
-    "golang.org/x/net/context",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/status",

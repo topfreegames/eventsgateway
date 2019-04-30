@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/topfreegames/eventsgateway/metrics"
+	"github.com/topfreegames/eventsgateway/sender"
 
 	"google.golang.org/grpc"
 
@@ -51,6 +52,7 @@ type App struct {
 	host            string
 	port            int
 	server          *Server
+	grpcServer      *grpc.Server
 	config          *viper.Viper
 	log             logrus.FieldLogger
 	eventsForwarder forwarder.Forwarder
@@ -97,9 +99,14 @@ func (a *App) configureEventsForwarder() error {
 	if err != nil {
 		return err
 	}
-	sender := NewSender(k, a.log, a.config)
+	sender := sender.NewKafka(k, a.log, a.config)
 	a.server = NewServer(sender, a.log)
 	return nil
+}
+
+// SetServer in *App
+func (a *App) SetServer(server *Server) {
+	a.server = server
 }
 
 // metricsReporterInterceptor interceptor
@@ -109,19 +116,15 @@ func (a *App) metricsReporterInterceptor(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-
 	l := a.log.WithField("route", info.FullMethod)
 
-	startTime := time.Now()
-
-	defer func() {
-		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
+	defer func(startTime time.Time) {
+		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000))
 		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod).Observe(timeUsed)
 		l.WithField("timeUsed", timeUsed).Debug("request processed")
-	}()
+	}(time.Now())
 
 	res, err := handler(ctx, req)
-
 	if err != nil {
 		l.WithError(err).Error("error processing request")
 		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, err.Error()).Inc()
@@ -143,9 +146,14 @@ func (a *App) Run() {
 
 	var opts []grpc.ServerOption
 	opts = append(opts, grpc.UnaryInterceptor(a.metricsReporterInterceptor))
-	grpcServer := grpc.NewServer(opts...)
+	a.grpcServer = grpc.NewServer(opts...)
 
-	pb.RegisterGRPCForwarderServer(grpcServer, a.server)
+	pb.RegisterGRPCForwarderServer(a.grpcServer, a.server)
+	if err := a.grpcServer.Serve(listener); err != nil {
+		log.Panic(err.Error())
+	}
+}
 
-	grpcServer.Serve(listener)
+func (a *App) Stop() {
+	a.grpcServer.GracefulStop()
 }

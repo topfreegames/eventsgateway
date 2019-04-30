@@ -26,17 +26,18 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
+	"github.com/topfreegames/eventsgateway/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 
 // Server struct
 type Server struct {
 	logger logrus.FieldLogger
-	sender Sender
+	sender sender.Sender
 }
 
 // NewServer returns a new grpc server
-func NewServer(sender Sender, logger logrus.FieldLogger) *Server {
+func NewServer(sender sender.Sender, logger logrus.FieldLogger) *Server {
 	s := &Server{
 		logger: logger,
 		sender: sender,
@@ -44,10 +45,20 @@ func NewServer(sender Sender, logger logrus.FieldLogger) *Server {
 	return s
 }
 
-func (s *Server) SendEvents(ctx context.Context, msg *pb.Events) (*pb.Response, error) {
-	return s.sender.SendEvents(msg)
+func (s *Server) SendEvent(
+	ctx context.Context,
+	req *pb.Event,
+) (*pb.SendEventResponse, error) {
+	if err := s.sender.SendEvent(ctx, req); err != nil {
+		return nil, err
+	}
+	return &pb.SendEventResponse{}, nil
 }
 
-func (s *Server) SendEvent(ctx context.Context, msg *pb.Event) (*pb.Response, error) {
-	return s.sender.SendEvent(msg)
+func (s *Server) SendEvents(
+	ctx context.Context,
+	req *pb.SendEventsRequest,
+) (*pb.SendEventsResponse, error) {
+	failureIndexes := s.sender.SendEvents(ctx, req.Events)
+	return &pb.SendEventsResponse{FailureIndexes: failureIndexes}, nil
 }

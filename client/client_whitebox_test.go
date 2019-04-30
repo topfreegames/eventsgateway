@@ -1,0 +1,51 @@
+// eventsgateway
+// +build unit
+// https://github.com/topfreegames/eventsgateway
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2017 Top Free Games <backend@tfgco.com>
+
+package client
+
+import (
+	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	. "github.com/topfreegames/eventsgateway/testing"
+	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
+)
+
+var _ = Describe("Client Whitebox", func() {
+	var (
+		c *Client
+	)
+
+	BeforeEach(func() {
+		var err error
+		logger, _ := test.NewNullLogger()
+		logger.Level = logrus.DebugLevel
+		config, _ := GetDefaultConfig()
+
+		mockCtrl := gomock.NewController(GinkgoT())
+		mockGRPCClient := mockpb.NewMockGRPCForwarderClient(mockCtrl)
+		config.Set("client.async", true)
+		c, err = NewClient(
+			"",
+			config,
+			logger,
+			mockGRPCClient,
+		)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	Describe("NewClient", func() {
+		It("Should have gRPCClientAsync as grpc client", func() {
+			_, ok := c.GetGRPCClient().(*gRPCClientAsync)
+			Expect(ok).To(BeTrue())
+		})
+	})
+})

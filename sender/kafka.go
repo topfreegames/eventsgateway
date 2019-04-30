@@ -1,7 +1,8 @@
-package app
+package sender
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
@@ -14,50 +15,44 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type Sender interface {
-	SendEvents(msg *pb.Events) (*pb.Response, error)
-	SendEvent(msg *pb.Event) (*pb.Response, error)
-}
-
-type sender struct {
+type Kafka struct {
 	config      *viper.Viper
 	logger      logrus.FieldLogger
 	producer    forwarder.Forwarder
 	topicPrefix string
 }
 
-func NewSender(
+func NewKafka(
 	producer forwarder.Forwarder,
 	logger logrus.FieldLogger,
 	config *viper.Viper,
 ) Sender {
-	s := &sender{producer: producer, logger: logger, config: config}
-	s.configure()
-	return s
-}
-
-func (s *sender) configure() {
-	s.loadConfigurationDefaults()
-	s.topicPrefix = s.config.GetString("extensions.kafkaproducer.topicPrefix")
-}
-
-func (s *sender) loadConfigurationDefaults() {
-	s.config.SetDefault("extensions.kafkaproducer.topicPrefix", "sv-uploads-")
+	k := &Kafka{producer: producer, logger: logger, config: config}
+	k.config.SetDefault("extensions.kafkaproducer.topicPrefix", "sv-uploads-")
+	k.topicPrefix = k.config.GetString("extensions.kafkaproducer.topicPrefix")
+	return k
 }
 
 // SendEvents sends a batch of events to kafka
-func (s *sender) SendEvents(msg *pb.Events) (*pb.Response, error) {
-	for i := range msg.Events {
-		if _, err := s.SendEvent(msg.Events[i]); err != nil {
-			return &pb.Response{FailureIndex: int64(i)}, err
+func (k *Kafka) SendEvents(
+	ctx context.Context,
+	events []*pb.Event,
+) []int64 {
+	failureIndexes := make([]int64, 0, len(events))
+	for i, e := range events {
+		if err := k.SendEvent(ctx, e); err != nil {
+			failureIndexes = append(failureIndexes, int64(i))
 		}
 	}
-	return &pb.Response{}, nil
+	return failureIndexes
 }
 
 // SendEvent sends a event to kafka
-func (s *sender) SendEvent(event *pb.Event) (*pb.Response, error) {
-	l := s.logger.WithFields(logrus.Fields{
+func (k *Kafka) SendEvent(
+	ctx context.Context,
+	event *pb.Event,
+) error {
+	l := k.logger.WithFields(logrus.Fields{
 		"topic": event.GetTopic(),
 		"event": event,
 	})
@@ -66,7 +61,7 @@ func (s *sender) SendEvent(event *pb.Event) (*pb.Response, error) {
 		event.GetTopic() == "" ||
 		event.GetName() == "" ||
 		event.GetTimestamp() == int64(0) {
-		return nil, status.Errorf(codes.FailedPrecondition, "id, topic, name and timestamp should be set")
+		return status.Errorf(codes.FailedPrecondition, "id, topic, name and timestamp should be set")
 	}
 
 	l.Debugf("received event with id: %s, name: %s, topic: %s, props: %s",
@@ -81,7 +76,7 @@ func (s *sender) SendEvent(event *pb.Event) (*pb.Response, error) {
 	a.Name = event.GetName()
 	a.Props = event.GetProps()
 
-	a.ServerTimestamp = time.Now().UnixNano() / int64(time.Millisecond)
+	a.ServerTimestamp = time.Now().UnixNano() / 1000000
 	a.ClientTimestamp = event.GetTimestamp()
 
 	var buf bytes.Buffer
@@ -91,20 +86,19 @@ func (s *sender) SendEvent(event *pb.Event) (*pb.Response, error) {
 
 	if err != nil {
 		l.Warnf("error serializing event")
-		return nil, status.Errorf(status.Code(err), err.Error())
+		return status.Errorf(status.Code(err), err.Error())
 	}
 
-	topic := fmt.Sprintf("%s%s", s.topicPrefix, event.GetTopic())
+	topic := fmt.Sprintf("%s%s", k.topicPrefix, event.GetTopic())
 
-	partition, offset, err := s.producer.Produce(topic, buf.Bytes())
-
+	partition, offset, err := k.producer.Produce(topic, buf.Bytes())
 	if err != nil {
-		return nil, status.Errorf(status.Code(err), err.Error())
+		return status.Errorf(status.Code(err), err.Error())
 	}
 	l.WithFields(logrus.Fields{
 		"partition": partition,
 		"offset":    offset,
 	}).Debug("event sent to kafka")
 
-	return &pb.Response{}, nil
+	return nil
 }

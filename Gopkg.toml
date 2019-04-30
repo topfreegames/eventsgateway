@@ -25,7 +25,7 @@
 
 [[constraint]]
   name = "github.com/topfreegames/protos"
-  version = "1.5.0"
+  version = "1.6.0"
 
 [[constraint]]
   name = "github.com/Shopify/sarama"
@@ -42,3 +42,7 @@
 [[constraint]]
   name = "github.com/prometheus/client_golang"
   version = "0.8.0"
+
+[[override]]
+  name = "google.golang.org/grpc"
+	version = "1.20.1"

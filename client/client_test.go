@@ -23,7 +23,7 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		c   *client.GRPCClient
+		c   *client.Client
 		now int64
 	)
 	name := "EventName"
@@ -65,7 +65,7 @@ var _ = Describe("Client", func() {
 
 	Describe("Send", func() {
 		var (
-			c   *client.GRPCClient
+			c   *client.Client
 			now int64
 		)
 		name := "EventName"
@@ -93,7 +93,7 @@ var _ = Describe("Client", func() {
 				Expect(event.Timestamp).To(BeNumerically("~", now, 100))
 			}).Return(nil, nil)
 
-			err := c.Send(name, props)
+			err := c.Send(context.Background(), name, props)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("Client", func() {
 				gomock.Any(),
 			).Return(nil, errors.New("olar"))
 
-			err := c.Send(name, props)
+			err := c.Send(context.Background(), name, props)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("olar"))
 		})
@@ -123,7 +123,7 @@ var _ = Describe("Client", func() {
 				Expect(event.Timestamp).To(BeNumerically("~", now, 100))
 			}).Return(nil, nil)
 
-			err := c.SendToTopic(name, topic, props)
+			err := c.SendToTopic(context.Background(), name, props, topic)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -133,7 +133,7 @@ var _ = Describe("Client", func() {
 				gomock.Any(),
 			).Return(nil, errors.New("olar"))
 
-			err := c.Send(name, props)
+			err := c.Send(context.Background(), name, props)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("olar"))
 		})

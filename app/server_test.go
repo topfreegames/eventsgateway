@@ -1,3 +1,5 @@
+// +build unit
+
 package app_test
 
 import (
@@ -10,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/app"
+	"github.com/topfreegames/eventsgateway/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 
@@ -20,8 +23,8 @@ var _ = Describe("Client", func() {
 	)
 
 	BeforeEach(func() {
-		now = time.Now().UnixNano() / int64(time.Millisecond)
-		sender := app.NewSender(mockForwarder, logger, config)
+		now = time.Now().UnixNano() / 1000000
+		sender := sender.NewKafka(mockForwarder, logger, config)
 		s = app.NewServer(sender, logger)
 		Expect(s).NotTo(BeNil())
 	})
