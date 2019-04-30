@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -17,7 +16,6 @@ type gRPCClientSync struct {
 	config *viper.Viper
 	conn   *grpc.ClientConn
 	logger logrus.FieldLogger
-	wg     sync.WaitGroup
 }
 
 func newGRPCClientSync(
@@ -125,7 +123,6 @@ func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
 
 // Wait on pending async send of events
 func (s *gRPCClientSync) Wait() {
-	s.wg.Wait()
 	if err := s.conn.Close(); err != nil {
 		panic(err.Error())
 	}
