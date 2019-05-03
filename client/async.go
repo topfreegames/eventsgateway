@@ -23,17 +23,17 @@ import (
 )
 
 type gRPCClientAsync struct {
-	client        pb.GRPCForwarderClient
-	config        *viper.Viper
-	conn          *grpc.ClientConn
-	eventsChannel chan *pb.Event
-	flushInterval time.Duration
-	flushSize     int
-	logger        logrus.FieldLogger
-	maxRetries    int
-	retryInterval time.Duration
-	timeout       time.Duration
-	wg            sync.WaitGroup
+	client         pb.GRPCForwarderClient
+	config         *viper.Viper
+	conn           *grpc.ClientConn
+	eventsChannel  chan *pb.Event
+	lingerInterval time.Duration
+	batchSize      int
+	logger         logrus.FieldLogger
+	maxRetries     int
+	retryInterval  time.Duration
+	timeout        time.Duration
+	wg             sync.WaitGroup
 }
 
 func newGRPCClientAsync(
@@ -49,13 +49,13 @@ func newGRPCClientAsync(
 		logger: logger,
 	}
 
-	flushIntervalConf := fmt.Sprintf("%sclient.flushInterval", configPrefix)
-	a.config.SetDefault(flushIntervalConf, 500*time.Millisecond)
-	a.flushInterval = a.config.GetDuration(flushIntervalConf)
+	lingerIntervalConf := fmt.Sprintf("%sclient.lingerInterval", configPrefix)
+	a.config.SetDefault(lingerIntervalConf, 500*time.Millisecond)
+	a.lingerInterval = a.config.GetDuration(lingerIntervalConf)
 
-	flushSizeConf := fmt.Sprintf("%sclient.flushSize", configPrefix)
-	a.config.SetDefault(flushSizeConf, 50)
-	a.flushSize = a.config.GetInt(flushSizeConf)
+	batchSizeConf := fmt.Sprintf("%sclient.batchSize", configPrefix)
+	a.config.SetDefault(batchSizeConf, 50)
+	a.batchSize = a.config.GetInt(batchSizeConf)
 
 	channelBufferConf := fmt.Sprintf("%sclient.channelBuffer", configPrefix)
 	a.config.SetDefault(channelBufferConf, 200)
@@ -75,10 +75,10 @@ func newGRPCClientAsync(
 	a.timeout = a.config.GetDuration(timeoutConf)
 
 	a.logger = a.logger.WithFields(logrus.Fields{
-		"flushInterval": a.flushInterval,
-		"flushSize":     a.flushSize,
-		"channelBuffer": channelBuffer,
-		"timeout":       a.timeout,
+		"lingerInterval": a.lingerInterval,
+		"batchSize":      a.batchSize,
+		"channelBuffer":  channelBuffer,
+		"timeout":        a.timeout,
 	})
 
 	if err := a.configureGRPCForwarderClient(serverAddress, client); err != nil {
@@ -191,17 +191,17 @@ func (a *gRPCClientAsync) send(ctx context.Context, event *pb.Event) error {
 }
 
 func (a *gRPCClientAsync) sendRoutine() {
-	ticker := time.NewTicker(a.flushInterval)
+	ticker := time.NewTicker(a.lingerInterval)
 	defer ticker.Stop()
 
 	req := &pb.SendEventsRequest{}
-	req.Events = make([]*pb.Event, 0, a.flushSize)
+	req.Events = make([]*pb.Event, 0, a.batchSize)
 
 	send := func() {
 		cpy := req
 		cpy.Id = uuid.NewV4().String()
 		req = &pb.SendEventsRequest{}
-		req.Events = make([]*pb.Event, 0, a.flushSize)
+		req.Events = make([]*pb.Event, 0, a.batchSize)
 		go a.sendEvents(cpy, 0)
 	}
 
@@ -213,7 +213,7 @@ func (a *gRPCClientAsync) sendRoutine() {
 			}
 			a.wg.Done()
 			req.Events = append(req.Events, e)
-			if len(req.Events) == a.flushSize {
+			if len(req.Events) == a.batchSize {
 				send()
 			}
 		case <-ticker.C:
@@ -231,6 +231,7 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		"retryCount": retryCount,
 		"size":       len(req.Events),
 	})
+	l.Debug("sending events")
 	if retryCount > a.maxRetries {
 		l.Info("dropped events due to max retries")
 		a.wg.Done()

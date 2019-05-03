@@ -20,54 +20,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package testclient
+package cmd
 
 import (
-	"context"
-	"time"
-
-	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/client"
-
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/topfreegames/eventsgateway/testclient"
 )
 
-// TestClient is the app structure
-type TestClient struct {
-	log    logrus.FieldLogger
-	config *viper.Viper
-	client *client.Client
+// testClient represents the testclient command
+var testClient = &cobra.Command{
+	Use:   "test-client",
+	Short: "runs a test client",
+	Long:  `runs a test client`,
+	Run: func(cmd *cobra.Command, args []string) {
+		log := logrus.New()
+		if debug {
+			log.SetLevel(logrus.DebugLevel)
+		}
+		if json {
+			log.Formatter = new(logrus.JSONFormatter)
+		}
+		tc, err := testclient.NewTestClient(log, config)
+		if err != nil {
+			log.Panic(err)
+		}
+		tc.Run()
+	},
 }
 
-// NewTestClient creates test client
-func NewTestClient(
-	log logrus.FieldLogger, config *viper.Viper,
-) (*TestClient, error) {
-	ct := &TestClient{
-		log:    log,
-		config: config,
-	}
-	err := ct.configure()
-	return ct, err
-}
-
-func (ct *TestClient) configure() error {
-	c, err := client.NewClient("", ct.config, ct.log, nil)
-	if err != nil {
-		return err
-	}
-	ct.client = c
-	return nil
-}
-
-// Run runs the test client
-func (ct *TestClient) Run() {
-	if err := ct.client.Send(context.Background(), "test-event", map[string]string{
-		"some-prop": "some value",
-	}); err != nil {
-		println(err.Error())
-		return
-	}
-	time.Sleep(1 * time.Second)
-	println("done")
+func init() {
+	RootCmd.AddCommand(testClient)
 }
