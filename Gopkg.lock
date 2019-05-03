@@ -135,6 +135,7 @@
     ".",
     "hcl/ast",
     "hcl/parser",
+    "hcl/printer",
     "hcl/scanner",
     "hcl/strconv",
     "hcl/token",
@@ -372,12 +373,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:59354ad53dfe6ed1b941844cb029cd37c0377598eec3a0d49c03aee2375ef9c4"
+  digest = "1:90fe60ab6f827e308b0c8cc1e11dce8ff1e96a927c8b171271a3cb04dd517606"
   name = "github.com/spf13/viper"
   packages = ["."]
   pruneopts = ""
-  revision = "25b30aa063fc18e48662b86996252eabdcf2f0c7"
-  version = "v1.0.0"
+  revision = "9e56dacc08fbbf8c9ee2dbc717553c758ce42bc9"
+  version = "v1.3.2"
 
 [[projects]]
   digest = "1:1172b220e04dc6b5831de82bc44a500a016a5297087647c496c0bcb0de444f34"
@@ -388,7 +389,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:3dd9c6e0530fb523eeb55f8c67ec5f8e62c1d70e578eca8f39da56c2c0d9ec25"
+  digest = "1:a01580e67c32722dfa585197a3e92c10957709154f97e64fd638a599eef00171"
   name = "github.com/topfreegames/extensions"
   packages = [
     "kafka",
@@ -396,19 +397,19 @@
     "util",
   ]
   pruneopts = ""
-  revision = "60652653febcf337a1dee3fd9405988e0d8cf4d0"
-  version = "v5.0.0"
+  revision = "515e6b41fd5bf53bf4718fa13b2b7afbdc42c696"
+  version = "v8.1.0"
 
 [[projects]]
-  digest = "1:fc7b11db3d85965ff908abb864c2f59dd19c0428b553ab41e405a852ea5bb310"
+  digest = "1:b6a1671c30cce138036005137c16999b583bcce79ef8ad4741b53fb83c3492bb"
   name = "github.com/topfreegames/protos"
   packages = [
     "eventsgateway/grpc/generated",
     "eventsgateway/grpc/mock",
   ]
   pruneopts = ""
-  revision = "4fd8bb192eaaa438f93126fea22cbe21f262b6bc"
-  version = "v1.6.0"
+  revision = "58d2268fffea795793e6f3cfced61eaa727ab80f"
+  version = "v1.6.1"
 
 [[projects]]
   branch = "master"
@@ -438,15 +439,14 @@
   revision = "2fb46b16b8dda405028c50f7c7f0f9dd1fa6bfb1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:407b5f905024dd94ee08c1777fabb380fb3d380f92a7f7df2592be005337eeb3"
+  digest = "1:2f5c5fbafbc17ead793c4584c8d6ebbc16cf666d969488a0009a8a6a5008a86f"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "d89cdac9e8725f2aefce25fcbfef41134c9ad412"
 
 [[projects]]
   branch = "master"

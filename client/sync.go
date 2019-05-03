@@ -105,6 +105,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 			hostname,
 			method,
 			event.Topic,
+			"0",
 		).Observe(elapsedTime)
 		l.WithFields(logrus.Fields{
 			"elapsedTime": elapsedTime,
@@ -118,6 +119,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 			hostname,
 			method,
 			event.Topic,
+			"0",
 			err.Error(),
 		).Inc()
 		return err
@@ -126,6 +128,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 		hostname,
 		method,
 		event.Topic,
+		"0",
 	).Inc()
 	return nil
 }

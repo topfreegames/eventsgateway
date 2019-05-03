@@ -114,11 +114,13 @@ func (a *App) metricsReporterInterceptor(
 	l := a.log.WithField("route", info.FullMethod)
 
 	events := []*pb.Event{}
+	retry := "0"
 	switch t := req.(type) {
 	case *pb.Event:
 		events = append(events, req.(*pb.Event))
 	case *pb.SendEventsRequest:
 		events = append(events, req.(*pb.SendEventsRequest).Events...)
+		retry = fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
 	default:
 		l.Infof("Unexpected request type %T", t)
 	}
@@ -130,6 +132,7 @@ func (a *App) metricsReporterInterceptor(
 				hostname,
 				info.FullMethod,
 				e.Topic,
+				retry,
 			).Observe(elapsedTime)
 		}
 		l.WithField("elapsedTime", elapsedTime).Debug("request processed")
@@ -143,6 +146,7 @@ func (a *App) metricsReporterInterceptor(
 				hostname,
 				info.FullMethod,
 				e.Topic,
+				retry,
 				err.Error(),
 			).Inc()
 		}
@@ -152,6 +156,7 @@ func (a *App) metricsReporterInterceptor(
 				hostname,
 				info.FullMethod,
 				e.Topic,
+				retry,
 			).Inc()
 		}
 	}

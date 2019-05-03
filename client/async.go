@@ -143,6 +143,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	})
 
 	events := req.(*pb.SendEventsRequest).Events
+	retry := fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
 
 	defer func(startTime time.Time) {
 		elapsedTime := float64(time.Since(startTime).Nanoseconds() / 1000000)
@@ -151,6 +152,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 				hostname,
 				method,
 				e.Topic,
+				retry,
 			).Observe(elapsedTime)
 		}
 		l.WithFields(logrus.Fields{
@@ -166,6 +168,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 				hostname,
 				method,
 				e.Topic,
+				retry,
 				err.Error(),
 			).Inc()
 		}
@@ -175,6 +178,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 			hostname,
 			method,
 			e.Topic,
+			retry,
 		).Inc()
 	}
 	return nil
