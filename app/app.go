@@ -124,7 +124,7 @@ func (a *App) metricsReporterInterceptor(
 	}
 
 	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000))
+		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
 		for _, e := range events {
 			metrics.APIResponseTime.WithLabelValues(
 				hostname,
