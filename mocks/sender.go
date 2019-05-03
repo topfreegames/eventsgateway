@@ -36,8 +36,10 @@ func (ms *MockSender) SendEvents(
 	events []*pb.Event,
 ) []int64 {
 	ms.mu.Lock()
-	defer func() { ms.totalCalls++ }()
-	defer ms.mu.Unlock()
+	defer func() {
+		ms.totalCalls++
+		ms.mu.Unlock()
+	}()
 	ms.totalSent += len(events)
 	if ms.totalCalls == 0 {
 		ms.firstCallEvents = events
@@ -50,7 +52,7 @@ func (ms *MockSender) SendEvents(
 		ms.totalSent -= len(ret)
 		return ret
 	}
-	return []int64{}
+	return nil
 }
 
 func (ms *MockSender) SendEvent(

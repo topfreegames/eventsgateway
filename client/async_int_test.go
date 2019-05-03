@@ -50,7 +50,7 @@ var _ = Describe("Async Client", func() {
 			consumer, err = extensions.NewConsumer(config, logger)
 			Expect(err).NotTo(HaveOccurred())
 			go consumer.ConsumeLoop()
-			time.Sleep(1 * time.Second) // wait consumer receive assign partition
+			consumer.WaitUntilReady()
 		})
 
 		AfterEach(func() {
@@ -80,7 +80,13 @@ var _ = Describe("Async Client", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = c.GracefulStop()
 				Expect(err).NotTo(HaveOccurred())
-				<-*consumer.MessagesChannel()
+				select {
+				case msg := <-*consumer.MessagesChannel():
+					Expect(string(msg)).To(ContainSubstring(name))
+					// assert on the message?
+				case <-time.NewTimer(1 * time.Second).C:
+					Fail("timed out waiting for message")
+				}
 			})
 		})
 	})

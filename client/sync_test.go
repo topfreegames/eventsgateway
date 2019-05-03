@@ -36,7 +36,7 @@ var _ = Describe("Sync Client", func() {
 		var err error
 		c, err = client.NewClient("", config, logger, mockGRPCClient)
 		Expect(err).NotTo(HaveOccurred())
-		now = time.Now().UnixNano() / int64(time.Millisecond)
+		now = time.Now().UnixNano() / 1000000
 	})
 
 	Describe("Send", func() {
