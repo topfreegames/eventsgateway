@@ -18,13 +18,13 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		s   *app.Server
-		now int64
+		s     *app.Server
+		nowMs int64
 	)
 
 	BeforeEach(func() {
-		now = time.Now().UnixNano() / 1000000
-		sender := sender.NewKafka(mockForwarder, logger, config)
+		nowMs = time.Now().UnixNano() / 1000000
+		sender := sender.NewKafkaSender(mockForwarder, logger, config)
 		s = app.NewServer(sender, logger)
 		Expect(s).NotTo(BeNil())
 	})
@@ -36,7 +36,7 @@ var _ = Describe("Client", func() {
 				Id:        "someId",
 				Name:      "someEvent",
 				Props:     map[string]string{},
-				Timestamp: now,
+				Timestamp: nowMs,
 			}
 			res, err := s.SendEvent(ctx, e)
 			Expect(res).To(BeNil())
@@ -51,7 +51,7 @@ var _ = Describe("Client", func() {
 				Name:      "",
 				Topic:     "sometopic",
 				Props:     map[string]string{},
-				Timestamp: now,
+				Timestamp: nowMs,
 			}
 			res, err := s.SendEvent(ctx, e)
 			Expect(res).To(BeNil())
@@ -66,7 +66,7 @@ var _ = Describe("Client", func() {
 				Name:      "someName",
 				Topic:     "sometopic",
 				Props:     map[string]string{},
-				Timestamp: now,
+				Timestamp: nowMs,
 			}
 			res, err := s.SendEvent(ctx, e)
 			Expect(res).To(BeNil())
@@ -95,7 +95,7 @@ var _ = Describe("Client", func() {
 				Name:      "someName",
 				Topic:     "sometopic",
 				Props:     map[string]string{},
-				Timestamp: now,
+				Timestamp: nowMs,
 			}
 
 			mockForwarder.EXPECT().Produce(gomock.Eq("sv-uploads-sometopic"), gomock.Any()).Do(
@@ -106,7 +106,7 @@ var _ = Describe("Client", func() {
 					Expect(ev.Id).To(Equal(e.GetId()))
 					Expect(ev.Name).To(Equal(e.GetName()))
 					Expect(ev.ClientTimestamp).To(Equal(e.GetTimestamp()))
-					Expect(ev.ServerTimestamp).To(BeNumerically("~", now, 10))
+					Expect(ev.ServerTimestamp).To(BeNumerically("~", nowMs, 10))
 				})
 
 			res, err := s.SendEvent(ctx, e)
@@ -124,7 +124,7 @@ var _ = Describe("Client", func() {
 					"test1": "lalala",
 					"test2": "bla",
 				},
-				Timestamp: now,
+				Timestamp: nowMs,
 			}
 
 			mockForwarder.EXPECT().Produce(gomock.Eq("sv-uploads-sometopic"), gomock.Any()).Do(
@@ -135,7 +135,7 @@ var _ = Describe("Client", func() {
 					Expect(ev.Id).To(Equal(e.GetId()))
 					Expect(ev.Name).To(Equal(e.GetName()))
 					Expect(ev.ClientTimestamp).To(Equal(e.GetTimestamp()))
-					Expect(ev.ServerTimestamp).To(BeNumerically("~", now, 10))
+					Expect(ev.ServerTimestamp).To(BeNumerically("~", nowMs, 10))
 					Expect(ev.Props).To(BeEquivalentTo(map[string]string{
 						"test1": "lalala",
 						"test2": "bla",

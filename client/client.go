@@ -137,8 +137,9 @@ func (c *Client) GetGRPCClient() GRPCClient {
 	return c.client
 }
 
-func (c *Client) Wait() {
-	c.client.Wait()
+// GracefulStop waits pending async send of events and closes client connection
+func (c *Client) GracefulStop() error {
+	return c.client.GracefulStop()
 }
 
 func buildEvent(name string, props map[string]string, topic string) *pb.Event {

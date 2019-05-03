@@ -1,3 +1,10 @@
+// eventsgateway
+// https://github.com/topfreegames/eventsgateway
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2019 Top Free Games <backend@tfgco.com>
+
 package mocks
 
 import (
@@ -8,19 +15,19 @@ import (
 )
 
 type MockSender struct {
+	mu                  *sync.Mutex
 	totalSent           int
 	totalCalls          int
 	failureIndexesOrder [][]int64
 	firstCallEvents     []*pb.Event
 	eventsIdsFreqs      map[string]int
-	mutex               *sync.Mutex
 }
 
 func NewMockSender() *MockSender {
 	return &MockSender{
 		failureIndexesOrder: [][]int64{},
 		eventsIdsFreqs:      map[string]int{},
-		mutex:               &sync.Mutex{},
+		mu:                  &sync.Mutex{},
 	}
 }
 
@@ -28,9 +35,9 @@ func (ms *MockSender) SendEvents(
 	ctx context.Context,
 	events []*pb.Event,
 ) []int64 {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
+	ms.mu.Lock()
 	defer func() { ms.totalCalls++ }()
+	defer ms.mu.Unlock()
 	ms.totalSent += len(events)
 	if ms.totalCalls == 0 {
 		ms.firstCallEvents = events
@@ -50,39 +57,39 @@ func (ms *MockSender) SendEvent(
 	ctx context.Context,
 	event *pb.Event,
 ) error {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	ms.totalCalls++
 	ms.totalSent++
 	return nil
 }
 
 func (ms *MockSender) SetFailureIndexesOrder(failureIndexesOrder [][]int64) {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	ms.failureIndexesOrder = failureIndexesOrder
 }
 
 func (ms MockSender) GetTotalSent() int {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	return ms.totalSent
 }
 
 func (ms MockSender) GetTotalCalls() int {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	return ms.totalCalls
 }
 
 func (ms MockSender) GetFirstCallEvents() []*pb.Event {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	return ms.firstCallEvents
 }
 
 func (ms MockSender) GetEventsIdsFreqs() map[string]int {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 	return ms.eventsIdsFreqs
 }

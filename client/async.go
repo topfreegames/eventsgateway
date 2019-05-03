@@ -1,3 +1,10 @@
+// eventsgateway
+// https://github.com/topfreegames/eventsgateway
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2019 Top Free Games <backend@tfgco.com>
+
 package client
 
 import (
@@ -5,7 +12,6 @@ import (
 	"fmt"
 	"math"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -17,18 +23,17 @@ import (
 )
 
 type gRPCClientAsync struct {
-	client           pb.GRPCForwarderClient
-	config           *viper.Viper
-	conn             *grpc.ClientConn
-	eventsChannel    chan *pb.Event
-	flushInterval    time.Duration
-	flushSize        int
-	logger           logrus.FieldLogger
-	maxRetries       int
-	retryInterval    time.Duration
-	timeout          time.Duration
-	transientCounter uint64
-	wg               sync.WaitGroup
+	client        pb.GRPCForwarderClient
+	config        *viper.Viper
+	conn          *grpc.ClientConn
+	eventsChannel chan *pb.Event
+	flushInterval time.Duration
+	flushSize     int
+	logger        logrus.FieldLogger
+	maxRetries    int
+	retryInterval time.Duration
+	timeout       time.Duration
+	wg            sync.WaitGroup
 }
 
 func newGRPCClientAsync(
@@ -154,8 +159,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 		}).Debug("request processed")
 	}(time.Now())
 
-	err := invoker(ctx, method, req, reply, cc, opts...)
-	if err != nil {
+	if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
 		l.WithError(err).Error("error processing request")
 		for _, e := range events {
 			metrics.ClientRequestsFailureCounter.WithLabelValues(
@@ -165,20 +169,19 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 				err.Error(),
 			).Inc()
 		}
-	} else {
-		for _, e := range events {
-			metrics.ClientRequestsSuccessCounter.WithLabelValues(
-				hostname,
-				method,
-				e.Topic,
-			).Inc()
-		}
 	}
-	return err
+	for _, e := range events {
+		metrics.ClientRequestsSuccessCounter.WithLabelValues(
+			hostname,
+			method,
+			e.Topic,
+		).Inc()
+	}
+	return nil
 }
 
 func (a *gRPCClientAsync) send(ctx context.Context, event *pb.Event) error {
-	atomic.AddUint64(&a.transientCounter, 1)
+	a.wg.Add(1)
 	a.eventsChannel <- event
 	return nil
 }
@@ -204,7 +207,7 @@ func (a *gRPCClientAsync) sendRoutine() {
 			if len(req.Events) == 0 {
 				a.wg.Add(1)
 			}
-			atomic.AddUint64(&a.transientCounter, ^uint64(0))
+			a.wg.Done()
 			req.Events = append(req.Events, e)
 			if len(req.Events) == a.flushSize {
 				send()
@@ -254,15 +257,8 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 	}
 }
 
-// Wait on pending async send of events
-func (a *gRPCClientAsync) Wait() {
-	for {
-		if atomic.LoadUint64(&a.transientCounter) == 0 {
-			break
-		}
-	}
+// GracefulStop waits pending async send of events and closes client connection
+func (a *gRPCClientAsync) GracefulStop() error {
 	a.wg.Wait()
-	if err := a.conn.Close(); err != nil {
-		panic(err.Error())
-	}
+	return a.conn.Close()
 }

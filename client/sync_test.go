@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Client", func() {
+var _ = Describe("Sync Client", func() {
 	var (
 		c   *client.Client
 		now int64
@@ -37,30 +37,6 @@ var _ = Describe("Client", func() {
 		c, err = client.NewClient("", config, logger, mockGRPCClient)
 		Expect(err).NotTo(HaveOccurred())
 		now = time.Now().UnixNano() / int64(time.Millisecond)
-	})
-
-	Describe("NewClient", func() {
-		It("should return client if no error", func() {
-			c, err := client.NewClient("", config, logger, mockGRPCClient)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(c).NotTo(BeNil())
-		})
-
-		It("should return an error if no kafka topic", func() {
-			config.Set("client.kafkatopic", "")
-			c, err := client.NewClient("", config, logger, mockGRPCClient)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("no kafka topic informed"))
-			Expect(c).To(BeNil())
-		})
-
-		It("should return an error if no server address", func() {
-			config.Set("client.grpc.serveraddress", "")
-			c, err := client.NewClient("", config, logger, mockGRPCClient)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("no grpc server address informed"))
-			Expect(c).To(BeNil())
-		})
 	})
 
 	Describe("Send", func() {

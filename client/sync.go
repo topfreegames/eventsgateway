@@ -1,3 +1,10 @@
+// eventsgateway
+// https://github.com/topfreegames/eventsgateway
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2019 Top Free Games <backend@tfgco.com>
+
 package client
 
 import (
@@ -97,8 +104,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 		}).Debug("request processed")
 	}(time.Now())
 
-	err := invoker(ctx, method, req, reply, cc, opts...)
-	if err != nil {
+	if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
 		l.WithError(err).Error("error processing request")
 		metrics.ClientRequestsFailureCounter.WithLabelValues(
 			hostname,
@@ -106,14 +112,14 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 			event.Topic,
 			err.Error(),
 		).Inc()
-	} else {
-		metrics.ClientRequestsSuccessCounter.WithLabelValues(
-			hostname,
-			method,
-			event.Topic,
-		).Inc()
+		return err
 	}
-	return err
+	metrics.ClientRequestsSuccessCounter.WithLabelValues(
+		hostname,
+		method,
+		event.Topic,
+	).Inc()
+	return nil
 }
 
 func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
@@ -121,9 +127,7 @@ func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
 	return err
 }
 
-// Wait on pending async send of events
-func (s *gRPCClientSync) Wait() {
-	if err := s.conn.Close(); err != nil {
-		panic(err.Error())
-	}
+// GracefulStop closes client connection
+func (s *gRPCClientSync) GracefulStop() error {
+	return s.conn.Close()
 }

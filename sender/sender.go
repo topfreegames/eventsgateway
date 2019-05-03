@@ -1,3 +1,10 @@
+// eventsgateway
+// https://github.com/topfreegames/eventsgateway
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2019 Top Free Games <backend@tfgco.com>
+
 package sender
 
 import (

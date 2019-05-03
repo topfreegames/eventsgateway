@@ -49,13 +49,13 @@ var (
 
 // App is the app structure
 type App struct {
-	host            string
-	port            int
-	server          *Server
-	grpcServer      *grpc.Server
+	Server          *Server // tests manipulate this field
 	config          *viper.Viper
-	log             logrus.FieldLogger
 	eventsForwarder forwarder.Forwarder
+	grpcServer      *grpc.Server
+	host            string
+	log             logrus.FieldLogger
+	port            int
 }
 
 // NewApp creates a new App object
@@ -99,14 +99,9 @@ func (a *App) configureEventsForwarder() error {
 	if err != nil {
 		return err
 	}
-	sender := sender.NewKafka(k, a.log, a.config)
-	a.server = NewServer(sender, a.log)
+	sender := sender.NewKafkaSender(k, a.log, a.config)
+	a.Server = NewServer(sender, a.log)
 	return nil
-}
-
-// SetServer in *App
-func (a *App) SetServer(server *Server) {
-	a.server = server
 }
 
 // metricsReporterInterceptor interceptor
@@ -129,15 +124,15 @@ func (a *App) metricsReporterInterceptor(
 	}
 
 	defer func(startTime time.Time) {
-		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000))
+		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000))
 		for _, e := range events {
 			metrics.APIResponseTime.WithLabelValues(
 				hostname,
 				info.FullMethod,
 				e.Topic,
-			).Observe(timeUsed)
+			).Observe(elapsedTime)
 		}
-		l.WithField("timeUsed", timeUsed).Debug("request processed")
+		l.WithField("elapsedTime", elapsedTime).Debug("request processed")
 	}(time.Now())
 
 	res, err := handler(ctx, req)
@@ -177,7 +172,7 @@ func (a *App) Run() {
 	opts = append(opts, grpc.UnaryInterceptor(a.metricsReporterInterceptor))
 	a.grpcServer = grpc.NewServer(opts...)
 
-	pb.RegisterGRPCForwarderServer(a.grpcServer, a.server)
+	pb.RegisterGRPCForwarderServer(a.grpcServer, a.Server)
 	if err := a.grpcServer.Serve(listener); err != nil {
 		log.Panic(err.Error())
 	}

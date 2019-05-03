@@ -1,3 +1,10 @@
+// eventsgateway
+// https://github.com/topfreegames/eventsgateway
+//
+// Licensed under the MIT license:
+// http://www.opensource.org/licenses/mit-license
+// Copyright © 2019 Top Free Games <backend@tfgco.com>
+
 package sender
 
 import (
@@ -15,26 +22,26 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type Kafka struct {
+type KafkaSender struct {
 	config      *viper.Viper
 	logger      logrus.FieldLogger
 	producer    forwarder.Forwarder
 	topicPrefix string
 }
 
-func NewKafka(
+func NewKafkaSender(
 	producer forwarder.Forwarder,
 	logger logrus.FieldLogger,
 	config *viper.Viper,
-) Sender {
-	k := &Kafka{producer: producer, logger: logger, config: config}
+) *KafkaSender {
+	k := &KafkaSender{producer: producer, logger: logger, config: config}
 	k.config.SetDefault("extensions.kafkaproducer.topicPrefix", "sv-uploads-")
 	k.topicPrefix = k.config.GetString("extensions.kafkaproducer.topicPrefix")
 	return k
 }
 
 // SendEvents sends a batch of events to kafka
-func (k *Kafka) SendEvents(
+func (k *KafkaSender) SendEvents(
 	ctx context.Context,
 	events []*pb.Event,
 ) []int64 {
@@ -48,7 +55,7 @@ func (k *Kafka) SendEvents(
 }
 
 // SendEvent sends a event to kafka
-func (k *Kafka) SendEvent(
+func (k *KafkaSender) SendEvent(
 	ctx context.Context,
 	event *pb.Event,
 ) error {
@@ -82,18 +89,16 @@ func (k *Kafka) SendEvent(
 	var buf bytes.Buffer
 
 	l.Debugf("serializing event")
-	err := a.Serialize(&buf)
-
-	if err != nil {
+	if err := a.Serialize(&buf); err != nil {
 		l.Warnf("error serializing event")
-		return status.Errorf(status.Code(err), err.Error())
+		return err
 	}
 
 	topic := fmt.Sprintf("%s%s", k.topicPrefix, event.GetTopic())
 
 	partition, offset, err := k.producer.Produce(topic, buf.Bytes())
 	if err != nil {
-		return status.Errorf(status.Code(err), err.Error())
+		return err
 	}
 	l.WithFields(logrus.Fields{
 		"partition": partition,

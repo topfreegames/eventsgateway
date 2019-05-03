@@ -3,7 +3,7 @@ extensions:
     brokers: localhost:9192
     maxMessageBytes: 3000000
 client:
-  async: true
+  async: false
   channelBuffer: 500
   flushInterval: 500ms
   flushSize: 50
