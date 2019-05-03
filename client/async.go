@@ -145,17 +145,17 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	events := req.(*pb.SendEventsRequest).Events
 
 	defer func(startTime time.Time) {
-		timeUsed := float64(time.Since(startTime).Nanoseconds() / 1000000)
+		elapsedTime := float64(time.Since(startTime).Nanoseconds() / 1000000)
 		for _, e := range events {
 			metrics.ClientRequestsResponseTime.WithLabelValues(
 				hostname,
 				method,
 				e.Topic,
-			).Observe(timeUsed)
+			).Observe(elapsedTime)
 		}
 		l.WithFields(logrus.Fields{
-			"timeUsed": timeUsed,
-			"reply":    reply.(*pb.SendEventsResponse),
+			"elapsedTime": elapsedTime,
+			"reply":       reply.(*pb.SendEventsResponse),
 		}).Debug("request processed")
 	}(time.Now())
 
