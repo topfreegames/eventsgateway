@@ -232,7 +232,8 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		a.wg.Done()
 		return
 	}
-	ctx, _ := context.WithTimeout(context.Background(), a.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
+	defer cancel()
 	// in case server's producer fail to send any event, failure indexes are sent
 	// in response to be retried
 	res, err := a.client.SendEvents(ctx, req)
@@ -240,6 +241,7 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		l.WithError(err).Error("failed to send events")
 		time.Sleep(time.Duration(math.Pow(2, float64(retryCount))) * a.retryInterval)
 		a.sendEvents(req, retryCount+1)
+		return
 	}
 	if res.FailureIndexes != nil && len(res.FailureIndexes) != 0 {
 		l.WithFields(logrus.Fields{
@@ -252,9 +254,9 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		}
 		req.Events = events
 		a.sendEvents(req, retryCount+1)
-	} else {
-		a.wg.Done()
+		return
 	}
+	a.wg.Done()
 }
 
 // GracefulStop waits pending async send of events and closes client connection

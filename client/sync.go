@@ -9,6 +9,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -19,10 +20,11 @@ import (
 )
 
 type gRPCClientSync struct {
-	client pb.GRPCForwarderClient
-	config *viper.Viper
-	conn   *grpc.ClientConn
-	logger logrus.FieldLogger
+	client  pb.GRPCForwarderClient
+	config  *viper.Viper
+	conn    *grpc.ClientConn
+	logger  logrus.FieldLogger
+	timeout time.Duration
 }
 
 func newGRPCClientSync(
@@ -33,18 +35,24 @@ func newGRPCClientSync(
 	client pb.GRPCForwarderClient,
 	opts ...grpc.DialOption,
 ) (*gRPCClientSync, error) {
-	g := &gRPCClientSync{
+	s := &gRPCClientSync{
 		config: config,
 		logger: logger,
 	}
-	if err := g.configureGRPCForwarderClient(
+	timeoutConf := fmt.Sprintf("%sclient.grpc.timeout", configPrefix)
+	s.config.SetDefault(timeoutConf, 500*time.Millisecond)
+	s.timeout = s.config.GetDuration(timeoutConf)
+	s.logger = logger.WithFields(logrus.Fields{
+		"timeout": s.timeout,
+	})
+	if err := s.configureGRPCForwarderClient(
 		serverAddress,
 		client,
 		opts...,
 	); err != nil {
 		return nil, err
 	}
-	return g, nil
+	return s, nil
 }
 
 func (s *gRPCClientSync) configureGRPCForwarderClient(
@@ -123,7 +131,9 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 }
 
 func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
-	_, err := s.client.SendEvent(ctx, event)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), s.timeout)
+	defer cancel()
+	_, err := s.client.SendEvent(ctxWithTimeout, event)
 	return err
 }
 

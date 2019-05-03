@@ -31,7 +31,6 @@ type Client struct {
 	client        GRPCClient
 	config        *viper.Viper
 	logger        logrus.FieldLogger
-	timeout       time.Duration
 	topic         string
 	wg            sync.WaitGroup
 	serverAddress string
@@ -57,13 +56,9 @@ func NewClient(
 	if c.topic == "" {
 		return nil, fmt.Errorf("no kafka topic informed at %s", topicConf)
 	}
-	timeoutConf := fmt.Sprintf("%sclient.grpc.timeout", configPrefix)
-	c.config.SetDefault(timeoutConf, 500*time.Millisecond)
-	c.timeout = c.config.GetDuration(timeoutConf)
 	c.logger = c.logger.WithFields(logrus.Fields{
-		"source":  "eventsgateway/client",
-		"topic":   c.topic,
-		"timeout": c.timeout,
+		"source": "eventsgateway/client",
+		"topic":  c.topic,
 	})
 	var err error
 	if c.client, err = c.newGRPCClient(configPrefix, client, opts...); err != nil {
