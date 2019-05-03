@@ -25,14 +25,14 @@ package cmd
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/eventsgateway/testclient"
+	"github.com/topfreegames/eventsgateway/loadtestclient"
 )
 
-// testClient represents the testclient command
-var testClient = &cobra.Command{
-	Use:   "testclient",
-	Short: "runs a test client",
-	Long:  `runs a test client`,
+// loadTestClient represents the testclient command
+var loadTestClient = &cobra.Command{
+	Use:   "load-test-client",
+	Short: "runs a load test client",
+	Long:  `runs a load test client`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log := logrus.New()
 		if debug {
@@ -41,7 +41,7 @@ var testClient = &cobra.Command{
 		if json {
 			log.Formatter = new(logrus.JSONFormatter)
 		}
-		tc, err := testclient.NewTestClient(log, config)
+		tc, err := loadtestclient.NewLoadTestClient(log, config)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -50,5 +50,5 @@ var testClient = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(testClient)
+	RootCmd.AddCommand(loadTestClient)
 }

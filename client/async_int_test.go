@@ -136,9 +136,9 @@ var _ = Describe("Async Client", func() {
 			})
 
 			Describe("Flush configurations", func() {
-				It("Should flush at every flushSize = 1 events", func() {
-					config.Set("client.flushInterval", 1*time.Second)
-					config.Set("client.flushSize", 1)
+				It("Should flush at every batchSize = 1 events", func() {
+					config.Set("client.lingerInterval", 1*time.Second)
+					config.Set("client.batchSize", 1)
 					startAppAndClient()
 					var err error
 					err = c.Send(context.Background(), name, props)
@@ -153,9 +153,9 @@ var _ = Describe("Async Client", func() {
 					Expect(s.GetTotalCalls()).To(Equal(3))
 				})
 
-				It("Should flush at every flushSize = 3 events", func() {
-					config.Set("client.flushInterval", 1*time.Second)
-					config.Set("client.flushSize", 3)
+				It("Should flush at every batchSize = 3 events", func() {
+					config.Set("client.lingerInterval", 1*time.Second)
+					config.Set("client.batchSize", 3)
 					startAppAndClient()
 					var err error
 					err = c.Send(context.Background(), name, props)
@@ -170,9 +170,9 @@ var _ = Describe("Async Client", func() {
 					Expect(s.GetTotalCalls()).To(Equal(1))
 				})
 
-				It("Should flush at every flushInterval = 5ms", func() {
-					config.Set("client.flushInterval", 5*time.Millisecond)
-					config.Set("client.flushSize", 3)
+				It("Should flush at every lingerInterval = 5ms", func() {
+					config.Set("client.lingerInterval", 5*time.Millisecond)
+					config.Set("client.batchSize", 3)
 					startAppAndClient()
 					var err error
 					err = c.Send(context.Background(), name, props)
@@ -193,8 +193,8 @@ var _ = Describe("Async Client", func() {
 				It("Should retry only failed indexes", func() {
 					config.Set("client.maxRetries", 3)
 					config.Set("client.retryInterval", 1*time.Nanosecond)
-					config.Set("client.flushInterval", 1*time.Second)
-					config.Set("client.flushSize", 5)
+					config.Set("client.lingerInterval", 1*time.Second)
+					config.Set("client.batchSize", 5)
 					startAppAndClient()
 					s.SetFailureIndexesOrder([][]int64{
 						[]int64{0, 3},
@@ -226,8 +226,8 @@ var _ = Describe("Async Client", func() {
 				It("Should stop after maxRetries = 0", func() {
 					config.Set("client.maxRetries", 0)
 					config.Set("client.retryInterval", 1*time.Nanosecond)
-					config.Set("client.flushInterval", 1*time.Second)
-					config.Set("client.flushSize", 5)
+					config.Set("client.lingerInterval", 1*time.Second)
+					config.Set("client.batchSize", 5)
 					startAppAndClient()
 					s.SetFailureIndexesOrder([][]int64{
 						[]int64{0, 3},

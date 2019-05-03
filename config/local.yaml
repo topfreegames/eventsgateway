@@ -5,8 +5,8 @@ extensions:
 client:
   async: false
   channelBuffer: 500
-  flushInterval: 500ms
-  flushSize: 50
+  lingerInterval: 500ms
+  batchSize: 50
   kafkatopic: default-topic
   maxRetries: 3
   numRoutines: 5
@@ -14,6 +14,10 @@ client:
   grpc:
     serverAddress: localhost:5000
     timeout: 500ms
+loadtestclient:
+  duration: 10s
+  randSleepCeilingMs: 500
+  randPropsSize: small # small, medium, large, jumbo
 sentry:
   url: ""
 newrelic:

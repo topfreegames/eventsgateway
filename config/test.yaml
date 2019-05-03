@@ -14,8 +14,8 @@ extensions:
 client:
   async: false
   channelBuffer: 500
-  flushInterval: 1s
-  flushSize: 1
+  lingerInterval: 1s
+  batchSize: 1
   kafkatopic: test-topic 
   maxRetries: 3
   numRoutines: 1

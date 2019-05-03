@@ -8,7 +8,7 @@
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
 TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 
-.PHONY: testclient gobblin
+.PHONY: load-test-client test-client gobblin
 
 setup: setup-hooks
 	@go get -u github.com/golang/dep...
@@ -33,6 +33,7 @@ build-docker:
 
 deps-start:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
+	@-docker network create eventsgateway
 	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d \
 		zookeeper kafka localstack
 	@echo "Dependencies started successfully."
@@ -55,9 +56,13 @@ run:
 	@echo "Will connect to kafka at ${MY_IP}:9192"
 	@env EVENTSGATEWAY_EXTENSIONS_KAFKAPRODUCER_BROKERS=${MY_IP}:9192 go run main.go start -d
 
-testclient:
+test-client:
 	@echo "Will connect to server at ${MY_IP}:5000"
-	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go testclient -d
+	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go test-client -d
+
+load-test-client:
+	@echo "Will connect to server at ${MY_IP}:5000"
+	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go load-test-client -d
 
 hive-start:
 	@echo "Starting Hive stack using HOST IP of ${MY_IP}..."

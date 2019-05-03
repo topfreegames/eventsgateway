@@ -10,7 +10,6 @@ package client_test
 
 import (
 	"context"
-	"time"
 
 	"github.com/topfreegames/eventsgateway/app"
 	"github.com/topfreegames/eventsgateway/client"
