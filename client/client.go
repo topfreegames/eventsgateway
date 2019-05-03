@@ -8,17 +8,17 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
+	uuid "github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
-	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
@@ -26,161 +26,123 @@ var (
 	hostname, _ = os.Hostname()
 )
 
-// GRPCClient struct
-type GRPCClient struct {
+// Client struct
+type Client struct {
+	client        GRPCClient
 	config        *viper.Viper
-	client        pb.GRPCForwarderClient
-	logger        log.FieldLogger
-	serverAddress string
+	logger        logrus.FieldLogger
 	topic         string
-	timeout       time.Duration
+	wg            sync.WaitGroup
+	serverAddress string
 }
 
-func (g *GRPCClient) sendEvent(name, topic string, props map[string]string) error {
-	g.logger.WithFields(log.Fields{
-		"operation": "eventRequest",
-		"name":      name,
-	}).Debug("getting event request")
-
-	req := &pb.Event{
-		Id:        uuid.NewV4().String(),
-		Name:      name,
-		Topic:     topic,
-		Props:     props,
-		Timestamp: time.Now().UnixNano() / int64(time.Millisecond),
+// NewClient ctor
+func NewClient(
+	configPrefix string,
+	config *viper.Viper,
+	logger logrus.FieldLogger,
+	client pb.GRPCForwarderClient,
+	opts ...grpc.DialOption,
+) (*Client, error) {
+	if configPrefix != "" && !strings.HasSuffix(configPrefix, ".") {
+		configPrefix = strings.Join([]string{configPrefix, "."}, "")
 	}
+	c := &Client{
+		config: config,
+		logger: logger,
+	}
+	topicConf := fmt.Sprintf("%sclient.kafkatopic", configPrefix)
+	c.topic = c.config.GetString(topicConf)
+	if c.topic == "" {
+		return nil, fmt.Errorf("no kafka topic informed at %s", topicConf)
+	}
+	c.logger = c.logger.WithFields(logrus.Fields{
+		"source": "eventsgateway/client",
+		"topic":  c.topic,
+	})
+	var err error
+	if c.client, err = c.newGRPCClient(configPrefix, client, opts...); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
 
-	ctx, _ := context.WithTimeout(context.Background(), g.timeout)
-	_, err := g.client.SendEvent(ctx, req)
-	return err
+func (c *Client) newGRPCClient(
+	configPrefix string,
+	client pb.GRPCForwarderClient,
+	opts ...grpc.DialOption,
+) (GRPCClient, error) {
+	serverConf := fmt.Sprintf("%sclient.grpc.serverAddress", configPrefix)
+	c.serverAddress = c.config.GetString(serverConf)
+	if c.serverAddress == "" {
+		return nil, fmt.Errorf("no grpc server address informed at %s", serverConf)
+	}
+	asyncConf := fmt.Sprintf("%sclient.async", configPrefix)
+	c.config.SetDefault(asyncConf, false)
+	async := c.config.GetBool(asyncConf)
+	c.logger = c.logger.WithFields(logrus.Fields{
+		"serverAddress": c.serverAddress,
+		"async":         async,
+	})
+	if async {
+		return newGRPCClientAsync(configPrefix, c.config, c.logger, c.serverAddress, client, opts...)
+	}
+	return newGRPCClientSync(configPrefix, c.config, c.logger, c.serverAddress, client, opts...)
 }
 
 // Send sends an event to another server via grpc using the client's configured topic
-func (g *GRPCClient) Send(name string, props map[string]string) error {
-	l := g.logger.WithFields(log.Fields{
+func (c *Client) Send(
+	ctx context.Context,
+	name string,
+	props map[string]string,
+) error {
+	l := c.logger.WithFields(logrus.Fields{
 		"operation": "send",
 		"event":     name,
 	})
 	l.Debug("sending event")
-	err := g.sendEvent(name, g.topic, props)
-	if err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, c.topic)); err != nil {
 		l.WithError(err).Error("send event failed")
+		return err
 	}
-	l.Debug("successfully sended event")
-	return err
+	return nil
 }
 
 // SendToTopic sends an event to another server via grpc using an explicit topic
-func (g *GRPCClient) SendToTopic(name, topic string, props map[string]string) error {
-	l := g.logger.WithFields(log.Fields{
+func (c *Client) SendToTopic(
+	ctx context.Context,
+	name string,
+	props map[string]string,
+	topic string,
+) error {
+	l := c.logger.WithFields(logrus.Fields{
 		"operation": "sendToTopic",
 		"event":     name,
 		"topic":     topic,
 	})
 	l.Debug("sending event")
-	err := g.sendEvent(name, topic, props)
-	if err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, topic)); err != nil {
 		l.WithError(err).Error("send event failed")
-	}
-	l.Debug("successfully sended event")
-	return err
-}
-
-// MetricsReporterInterceptor will report metrics from client
-func (g *GRPCClient) MetricsReporterInterceptor(
-	ctx context.Context,
-	method string,
-	req interface{},
-	reply interface{},
-	cc *grpc.ClientConn,
-	invoker grpc.UnaryInvoker,
-	opts ...grpc.CallOption,
-) error {
-	l := g.logger.WithFields(log.Fields{
-		"method": method,
-	})
-
-	startTime := time.Now()
-	event := req.(*pb.Event)
-
-	defer func() {
-		timeUsed := float64(time.Since(startTime).Nanoseconds() / int64(time.Millisecond))
-		metrics.ClientRequestsResponseTime.WithLabelValues(hostname, method, event.GetTopic()).Observe(timeUsed)
-		l.WithFields(log.Fields{
-			"timeUsed": timeUsed,
-			"reply":    reply.(*pb.Response),
-		}).Debug("request processed")
-	}()
-
-	err := invoker(ctx, method, req, reply, cc, opts...)
-
-	if err != nil {
-		l.WithError(err).Error("error processing request")
-		metrics.ClientRequestsFailureCounter.WithLabelValues(hostname, method, event.GetTopic(), err.Error()).Inc()
-	} else {
-		metrics.ClientRequestsSuccessCounter.WithLabelValues(hostname, method, event.GetTopic()).Inc()
-	}
-	return err
-}
-
-func (g *GRPCClient) configure(configPrefix string, client pb.GRPCForwarderClient) error {
-	if configPrefix != "" && !strings.HasSuffix(configPrefix, ".") {
-		configPrefix = strings.Join([]string{configPrefix, "."}, "")
-	}
-	topicConf := fmt.Sprintf("%sclient.kafkatopic", configPrefix)
-	g.topic = g.config.GetString(topicConf)
-	if g.topic == "" {
-		return fmt.Errorf("no kafka topic informed at %s", topicConf)
-	}
-
-	serverConf := fmt.Sprintf("%sclient.grpc.serveraddress", configPrefix)
-	g.serverAddress = g.config.GetString(serverConf)
-	if g.serverAddress == "" {
-		return fmt.Errorf("no grpc server address informed at %s", serverConf)
-	}
-
-	timeoutConf := fmt.Sprintf("%sclient.grpc.timeoutms", configPrefix)
-	g.config.SetDefault(timeoutConf, 500)
-	g.timeout = g.config.GetDuration(timeoutConf) * time.Millisecond
-
-	g.logger = g.logger.WithFields(log.Fields{
-		"source":     "eventsgateway/client",
-		"topic":      g.topic,
-		"serverAddr": g.serverAddress,
-		"timeout":    g.timeout,
-	})
-
-	if client != nil {
-		g.client = client
-		return nil
-	}
-
-	g.logger.WithFields(log.Fields{
-		"operation":    "configure",
-		"serverAdress": g.serverAddress,
-	}).Info("connecting to grpc server")
-	conn, err := grpc.Dial(
-		g.serverAddress,
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(g.MetricsReporterInterceptor),
-	)
-	if err != nil {
 		return err
 	}
-	g.client = pb.NewGRPCForwarderClient(conn)
 	return nil
 }
 
-// NewClient returns a new GRPCClient
-func NewClient(configPrefix string, config *viper.Viper, logger log.FieldLogger, client pb.GRPCForwarderClient) (*GRPCClient, error) {
-	g := &GRPCClient{
-		config: config,
-		logger: logger,
+func (c *Client) GetGRPCClient() GRPCClient {
+	return c.client
+}
+
+// GracefulStop waits pending async send of events and closes client connection
+func (c *Client) GracefulStop() error {
+	return c.client.GracefulStop()
+}
+
+func buildEvent(name string, props map[string]string, topic string) *pb.Event {
+	return &pb.Event{
+		Id:        uuid.NewV4().String(),
+		Name:      name,
+		Topic:     topic,
+		Props:     props,
+		Timestamp: time.Now().UnixNano() / 1000000,
 	}
-	err := g.configure(configPrefix, client)
-	if err != nil {
-		g.logger.WithError(err).Error("failed to configure client")
-		return nil, err
-	}
-	return g, nil
 }

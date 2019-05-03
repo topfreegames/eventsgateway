@@ -135,6 +135,7 @@
     ".",
     "hcl/ast",
     "hcl/parser",
+    "hcl/printer",
     "hcl/scanner",
     "hcl/strconv",
     "hcl/token",
@@ -372,12 +373,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:59354ad53dfe6ed1b941844cb029cd37c0377598eec3a0d49c03aee2375ef9c4"
+  digest = "1:90fe60ab6f827e308b0c8cc1e11dce8ff1e96a927c8b171271a3cb04dd517606"
   name = "github.com/spf13/viper"
   packages = ["."]
   pruneopts = ""
-  revision = "25b30aa063fc18e48662b86996252eabdcf2f0c7"
-  version = "v1.0.0"
+  revision = "9e56dacc08fbbf8c9ee2dbc717553c758ce42bc9"
+  version = "v1.3.2"
 
 [[projects]]
   digest = "1:1172b220e04dc6b5831de82bc44a500a016a5297087647c496c0bcb0de444f34"
@@ -388,7 +389,7 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:3dd9c6e0530fb523eeb55f8c67ec5f8e62c1d70e578eca8f39da56c2c0d9ec25"
+  digest = "1:a01580e67c32722dfa585197a3e92c10957709154f97e64fd638a599eef00171"
   name = "github.com/topfreegames/extensions"
   packages = [
     "kafka",
@@ -396,19 +397,19 @@
     "util",
   ]
   pruneopts = ""
-  revision = "60652653febcf337a1dee3fd9405988e0d8cf4d0"
-  version = "v5.0.0"
+  revision = "515e6b41fd5bf53bf4718fa13b2b7afbdc42c696"
+  version = "v8.1.0"
 
 [[projects]]
-  digest = "1:f7fa8f94a7e12b43ce961daaa2a5dc62706898216ba18e60850f9c2547d6be95"
+  digest = "1:b6a1671c30cce138036005137c16999b583bcce79ef8ad4741b53fb83c3492bb"
   name = "github.com/topfreegames/protos"
   packages = [
     "eventsgateway/grpc/generated",
     "eventsgateway/grpc/mock",
   ]
   pruneopts = ""
-  revision = "ce6fdfcd0a3c173d991bd616958384e40c201666"
-  version = "v1.5.0"
+  revision = "58d2268fffea795793e6f3cfced61eaa727ab80f"
+  version = "v1.6.1"
 
 [[projects]]
   branch = "master"
@@ -438,15 +439,14 @@
   revision = "2fb46b16b8dda405028c50f7c7f0f9dd1fa6bfb1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:407b5f905024dd94ee08c1777fabb380fb3d380f92a7f7df2592be005337eeb3"
+  digest = "1:2f5c5fbafbc17ead793c4584c8d6ebbc16cf666d969488a0009a8a6a5008a86f"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = ""
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "d89cdac9e8725f2aefce25fcbfef41134c9ad412"
 
 [[projects]]
   branch = "master"
@@ -492,20 +492,31 @@
   revision = "4eb30f4778eed4c258ba66527a0d4f9ec8a36c45"
 
 [[projects]]
-  digest = "1:1c1ce3d4783796c0922d16dec8b0e9be02d383888e9126718e5a5db8baa3fe6d"
+  digest = "1:afc1b03a6d5ba3cbb2e0a12133e734d472e4df3b65f06e600a3d57a4b82f26cc"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
-    "grpclb/grpc_lb_v1/messages",
+    "encoding/proto",
     "grpclog",
     "internal",
+    "internal/backoff",
+    "internal/balancerload",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
     "keepalive",
     "metadata",
     "naming",
@@ -516,11 +527,10 @@
     "stats",
     "status",
     "tap",
-    "transport",
   ]
   pruneopts = ""
-  revision = "6b51017f791ae1cfbec89c52efdf444b13b550ef"
-  version = "v1.9.2"
+  revision = "25c4f928eaa6d96443009bd842389fb4fa48664e"
+  version = "v1.20.1"
 
 [[projects]]
   branch = "v2"
@@ -550,7 +560,6 @@
     "github.com/topfreegames/extensions/kafka",
     "github.com/topfreegames/protos/eventsgateway/grpc/generated",
     "github.com/topfreegames/protos/eventsgateway/grpc/mock",
-    "golang.org/x/net/context",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/status",

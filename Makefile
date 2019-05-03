@@ -34,11 +34,18 @@ build-docker:
 deps-start:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
 	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d \
-		zookeeper kafka localstack 
+		zookeeper kafka localstack
 	@echo "Dependencies started successfully."
 
 deps-stop:
 	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway down
+
+deps-test-start:
+	@env MY_IP=${MY_IP} docker-compose -f ./docker-compose-test.yaml \
+		--project-name eventsgateway-test up -d
+
+deps-test-stop:
+	@docker-compose -f ./docker-compose-test.yaml down
 
 cross-build-linux-amd64:
 	@env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/eventsgateway-linux-amd64
@@ -87,7 +94,7 @@ gather-unit-profiles:
 	@echo "mode: count" > _build/coverage-unit.out
 	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
 
-int integration: integration-board clear-coverage-profiles deps-test integration-run gather-integration-profiles
+int integration: integration-board clear-coverage-profiles deps-test-start integration-run gather-integration-profiles deps-test-stop
 
 integration-board:
 	@echo
@@ -96,7 +103,8 @@ integration-board:
 	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 
 integration-run:
-	@ginkgo -tags integration -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
+	@GRPC_GO_RETRY=on ginkgo -tags integration -cover -r -randomizeAllSpecs -randomizeSuites \
+		--skipPackage=./app -skipMeasurements ${TEST_PACKAGES}
 
 int-ci: integration-board clear-coverage-profiles deps-test-ci integration-run gather-integration-profiles
 

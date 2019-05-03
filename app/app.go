@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/topfreegames/eventsgateway/metrics"
+	"github.com/topfreegames/eventsgateway/sender"
 
 	"google.golang.org/grpc"
 
@@ -48,12 +49,13 @@ var (
 
 // App is the app structure
 type App struct {
-	host            string
-	port            int
-	server          *Server
+	Server          *Server // tests manipulate this field
 	config          *viper.Viper
-	log             logrus.FieldLogger
 	eventsForwarder forwarder.Forwarder
+	grpcServer      *grpc.Server
+	host            string
+	log             logrus.FieldLogger
+	port            int
 }
 
 // NewApp creates a new App object
@@ -97,36 +99,66 @@ func (a *App) configureEventsForwarder() error {
 	if err != nil {
 		return err
 	}
-	a.server = NewServer(k, a.log, a.config)
+	sender := sender.NewKafkaSender(k, a.log, a.config)
+	a.Server = NewServer(sender, a.log)
 	return nil
 }
 
-// MetricsReporterInterceptor interceptor
-func (a *App) MetricsReporterInterceptor(
+// metricsReporterInterceptor interceptor
+func (a *App) metricsReporterInterceptor(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-
 	l := a.log.WithField("route", info.FullMethod)
-	ev := req.(*pb.Event)
 
-	startTime := time.Now()
+	events := []*pb.Event{}
+	retry := "0"
+	switch t := req.(type) {
+	case *pb.Event:
+		events = append(events, req.(*pb.Event))
+	case *pb.SendEventsRequest:
+		events = append(events, req.(*pb.SendEventsRequest).Events...)
+		retry = fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
+	default:
+		l.Infof("Unexpected request type %T", t)
+	}
 
-	defer func() {
-		timeUsed := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
-		metrics.APIResponseTime.WithLabelValues(hostname, info.FullMethod, ev.GetTopic()).Observe(timeUsed)
-		l.WithField("timeUsed", timeUsed).Debug("request processed")
-	}()
+	defer func(startTime time.Time) {
+		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
+		for _, e := range events {
+			metrics.APIResponseTime.WithLabelValues(
+				hostname,
+				info.FullMethod,
+				e.Topic,
+				retry,
+			).Observe(elapsedTime)
+		}
+		l.WithField("elapsedTime", elapsedTime).Debug("request processed")
+	}(time.Now())
 
 	res, err := handler(ctx, req)
-
 	if err != nil {
 		l.WithError(err).Error("error processing request")
-		metrics.APIRequestsFailureCounter.WithLabelValues(hostname, info.FullMethod, ev.GetTopic(), err.Error()).Inc()
+		for _, e := range events {
+			metrics.APIRequestsFailureCounter.WithLabelValues(
+				hostname,
+				info.FullMethod,
+				e.Topic,
+				retry,
+				err.Error(),
+			).Inc()
+		}
 	} else {
-		metrics.APIRequestsSuccessCounter.WithLabelValues(hostname, info.FullMethod, ev.GetTopic()).Inc()
+		for _, e := range events {
+			metrics.APIRequestsSuccessCounter.WithLabelValues(
+				hostname,
+				info.FullMethod,
+				e.Topic,
+				retry,
+			).Inc()
+		}
 	}
 
 	return res, err
@@ -142,10 +174,15 @@ func (a *App) Run() {
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
 	var opts []grpc.ServerOption
-	opts = append(opts, grpc.UnaryInterceptor(a.MetricsReporterInterceptor))
-	grpcServer := grpc.NewServer(opts...)
+	opts = append(opts, grpc.UnaryInterceptor(a.metricsReporterInterceptor))
+	a.grpcServer = grpc.NewServer(opts...)
 
-	pb.RegisterGRPCForwarderServer(grpcServer, a.server)
+	pb.RegisterGRPCForwarderServer(a.grpcServer, a.Server)
+	if err := a.grpcServer.Serve(listener); err != nil {
+		log.Panic(err.Error())
+	}
+}
 
-	grpcServer.Serve(listener)
+func (a *App) Stop() {
+	a.grpcServer.GracefulStop()
 }

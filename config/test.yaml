@@ -2,11 +2,27 @@ extensions:
   kafkaproducer:
     brokers: localhost:9192
     maxMessageBytes: 3000000
+  kafkaconsumer:
+    brokers: localhost:9192
+    topics:
+      - sv-uploads-test-topic
+    channelSize: 100
+    group: test
+    sessionTimeout: 6000
+    offsetResetStrategy: latest
+    handleAllMessagesBeforeExiting: true
 client:
+  async: false
+  channelBuffer: 500
+  flushInterval: 1s
+  flushSize: 1
+  kafkatopic: test-topic 
+  maxRetries: 3
+  numRoutines: 1
+  retryInterval: 1s
   grpc:
-    serveraddress: localhost:8888
-    timeoutms: 500
-  kafkatopic: default-topic
+    serveraddress: localhost:5000
+    timeoutms: 500ms
 sentry:
   url: ""
 newrelic:

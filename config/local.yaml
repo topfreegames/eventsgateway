@@ -3,10 +3,17 @@ extensions:
     brokers: localhost:9192
     maxMessageBytes: 3000000
 client:
-  grpc:
-    serveraddress: localhost:5000
-    timeoutms: 500
+  async: false
+  channelBuffer: 500
+  flushInterval: 500ms
+  flushSize: 50
   kafkatopic: default-topic
+  maxRetries: 3
+  numRoutines: 5
+  retryInterval: 1s
+  grpc:
+    serverAddress: localhost:5000
+    timeout: 500ms
 sentry:
   url: ""
 newrelic:

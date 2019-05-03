@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2018 Top Free Games
+// Copyright (c) 2019 Top Free Games
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,9 @@
 package testclient
 
 import (
+	"context"
+	"time"
+
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/client"
 
@@ -33,7 +36,7 @@ import (
 type TestClient struct {
 	log    logrus.FieldLogger
 	config *viper.Viper
-	client *client.GRPCClient
+	client *client.Client
 }
 
 // NewTestClient creates test client
@@ -64,11 +67,12 @@ func (ct *TestClient) configure() error {
 
 // Run runs the test client
 func (ct *TestClient) Run() {
-	if err := ct.client.Send("test-event", map[string]string{
+	if err := ct.client.Send(context.Background(), "test-event", map[string]string{
 		"some-prop": "some value",
 	}); err != nil {
 		println(err.Error())
 		return
 	}
+	time.Sleep(1 * time.Second)
 	println("done")
 }
