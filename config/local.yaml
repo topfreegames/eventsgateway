@@ -16,6 +16,7 @@ client:
     timeout: 500ms
 loadtestclient:
   duration: 10s
+  threads: 2
   randSleepCeilingMs: 500
   randPropsSize: small # small, medium, large, jumbo
 sentry:

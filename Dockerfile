@@ -25,7 +25,7 @@ MAINTAINER TFG Co <backend@tfgco.com>
 
 RUN mkdir -p /app/bin
 
-ENV LIBRDKAFKA_VERSION 0.11.3
+ENV LIBRDKAFKA_VERSION 1.0.0
 ENV CPLUS_INCLUDE_PATH /usr/local/include
 ENV LIBRARY_PATH /usr/local/lib
 ENV LD_LIBRARY_PATH /usr/local/lib

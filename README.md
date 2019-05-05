@@ -13,7 +13,7 @@ These are the necessary dependencies for EventsGateway server.
 
 2. `make run` starts EventsGateway server.
 
-3. `make testclient` executes a client that sends one dummy event.
+3. `make producer` executes a client that sends one dummy event.
 
 4. `make gobblin` runs a gobblin job that consumes from sv-uploads-* kafka topics and creates partitioned avro files in s3 (localstack) eventsgateway-local.
 

@@ -20,14 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package loadtestclient
+package loadtest
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
-	"os"
-	"os/signal"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -37,65 +34,60 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// LoadTestClient is the app strultcure
-type LoadTestClient struct {
-	log                logrus.FieldLogger
-	config             *viper.Viper
+type runner struct {
 	client             *client.Client
+	config             *viper.Viper
 	duration           time.Duration
+	log                logrus.FieldLogger
 	randPropsSize      string
 	randSleepCeilingMs int
+	sentCounter        uint64
+	threads            int
 }
 
-// NewLoadTestClient creates test client
-func NewLoadTestClient(
+func newRunner(
 	log logrus.FieldLogger, config *viper.Viper,
-) (*LoadTestClient, error) {
+) (*runner, error) {
 	rand.Seed(time.Now().Unix())
-	ltc := &LoadTestClient{
+	r := &runner{
 		log:    log,
 		config: config,
 	}
-	err := ltc.configure()
-	return ltc, err
+	err := r.configure()
+	return r, err
 }
 
-func (ltc *LoadTestClient) configure() error {
-	ltc.config.Set("client.kafkatopic", randomTopic())
-	c, err := client.NewClient("", ltc.config, ltc.log, nil)
+func (r *runner) configure() error {
+	r.config.Set("client.kafkatopic", randomTopic())
+	c, err := client.NewClient("", r.config, r.log, nil)
 	if err != nil {
 		return err
 	}
-	ltc.client = c
-	ltc.config.SetDefault("loadtestclient.duration", "10s")
-	ltc.duration = ltc.config.GetDuration("loadtestclient.duration")
-	ltc.config.SetDefault("loadtestclient.randSleepCeilingMs", 500)
-	ltc.randSleepCeilingMs = ltc.config.GetInt("loadtestclient.randSleepCeilingMs")
-	ltc.config.SetDefault("loadtestclient.randPropsSize", "small")
-	ltc.randPropsSize = ltc.config.GetString("loadtestclient.randPropsSize")
+	r.client = c
+	r.config.SetDefault("loadtestclient.duration", "10s")
+	r.duration = r.config.GetDuration("loadtestclient.duration")
+	r.config.SetDefault("loadtestclient.randSleepCeilingMs", 500)
+	r.randSleepCeilingMs = r.config.GetInt("loadtestclient.randSleepCeilingMs")
+	r.config.SetDefault("loadtestclient.randPropsSize", "small")
+	r.randPropsSize = r.config.GetString("loadtestclient.randPropsSize")
 	return nil
 }
 
-// Run runs the load test client
-func (ltc *LoadTestClient) Run() {
+func (r *runner) run() {
 	ctx := context.Background()
-	sentCounter := 0
+	stop := time.After(r.duration)
 	for {
 		select {
 		default:
-			props := buildProps(ltc.randPropsSize)
-			time.Sleep(time.Duration(rand.Intn(ltc.randSleepCeilingMs)) * time.Millisecond)
+			props := buildProps(r.randPropsSize)
+			time.Sleep(time.Duration(rand.Intn(r.randSleepCeilingMs)) * time.Millisecond)
 			if rand.Intn(2) == 0 {
-				ltc.client.Send(ctx, "load test event", props)
+				r.client.Send(ctx, "load test event", props)
 			} else {
-				ltc.client.SendToTopic(ctx, "load test event", props, randomTopic())
+				r.client.SendToTopic(ctx, "load test event", props, randomTopic())
 			}
-			sentCounter++
-		case <-time.NewTimer(ltc.duration).C:
-			fmt.Printf("Sent %d events in %s\n", sentCounter, ltc.duration)
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, os.Interrupt)
-			<-c
+			r.sentCounter++
+		case <-stop:
 			return
 		}
 	}
@@ -115,10 +107,10 @@ func randomTopic() string {
 
 func buildProps(size string) map[string]string {
 	m := map[string]int{
-		"small":  5,
-		"medium": 9,
-		"large":  13,
-		"jumbo":  23,
+		"small":  11,
+		"medium": 17,
+		"large":  29,
+		"jumbo":  37,
 	}
 	n := rand.Intn(m[size])
 	props := map[string]string{}

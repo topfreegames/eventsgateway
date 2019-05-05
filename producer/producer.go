@@ -20,35 +20,54 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package cmd
+package producer
 
 import (
+	"context"
+	"time"
+
+	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/client"
+
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"github.com/topfreegames/eventsgateway/loadtestclient"
 )
 
-// loadTestClient represents the testclient command
-var loadTestClient = &cobra.Command{
-	Use:   "load-test-client",
-	Short: "runs a load test client",
-	Long:  `runs a load test client`,
-	Run: func(cmd *cobra.Command, args []string) {
-		log := logrus.New()
-		if debug {
-			log.SetLevel(logrus.DebugLevel)
-		}
-		if json {
-			log.Formatter = new(logrus.JSONFormatter)
-		}
-		tc, err := loadtestclient.NewLoadTestClient(log, config)
-		if err != nil {
-			log.Panic(err)
-		}
-		tc.Run()
-	},
+// Producer is the app strupure
+type Producer struct {
+	log    logrus.FieldLogger
+	config *viper.Viper
+	client *client.Client
 }
 
-func init() {
-	RootCmd.AddCommand(loadTestClient)
+// NewProducer creates test client
+func NewProducer(
+	log logrus.FieldLogger, config *viper.Viper,
+) (*Producer, error) {
+	p := &Producer{
+		log:    log,
+		config: config,
+	}
+	err := p.configure()
+	return p, err
+}
+
+func (p *Producer) configure() error {
+	c, err := client.NewClient("", p.config, p.log, nil)
+	if err != nil {
+		return err
+	}
+	p.client = c
+	return nil
+}
+
+// Run runs the test client
+func (p *Producer) Run() {
+	if err := p.client.Send(context.Background(), "test-event", map[string]string{
+		"some-prop": "some value",
+	}); err != nil {
+		println(err.Error())
+		return
+	}
+	time.Sleep(1 * time.Second)
+	println("done")
 }
