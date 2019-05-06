@@ -241,14 +241,18 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 	defer cancel()
 	// in case server's producer fail to send any event, failure indexes are sent
 	// in response to be retried
+	req.Retry = int64(retryCount)
 	res, err := a.client.SendEvents(ctx, req)
+	if ctx.Err() != nil {
+		err = ctx.Err()
+	}
 	if err != nil {
 		l.WithError(err).Error("failed to send events")
 		time.Sleep(time.Duration(math.Pow(2, float64(retryCount))) * a.retryInterval)
 		a.sendEvents(req, retryCount+1)
 		return
 	}
-	if res.FailureIndexes != nil && len(res.FailureIndexes) != 0 {
+	if res != nil && len(res.FailureIndexes) != 0 {
 		l.WithFields(logrus.Fields{
 			"failureIndexes": res.FailureIndexes,
 		}).Error("failed to send events")
