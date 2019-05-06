@@ -100,6 +100,17 @@ var (
 	},
 		[]string{"clientHost", "route", "topic", "retry", "reason"},
 	)
+
+	// ClientRequestsDroppedCounter is the count of requests that were dropped due
+	// to req.Retry > maxRetries
+	ClientRequestsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "eventsgateway",
+		Subsystem: "client",
+		Name:      "requests_dropped_counter",
+		Help:      "the count of dropped client requests to the server",
+	},
+		[]string{"clientHost", "topic"},
+	)
 )
 
 func init() {
@@ -110,6 +121,7 @@ func init() {
 		ClientRequestsResponseTime,
 		ClientRequestsSuccessCounter,
 		ClientRequestsFailureCounter,
+		ClientRequestsDroppedCounter,
 	)
 	port := ":9091"
 	if envPort, ok := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_PORT"); ok {

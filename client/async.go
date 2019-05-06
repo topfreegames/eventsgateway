@@ -234,6 +234,12 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 	l.Debug("sending events")
 	if retryCount > a.maxRetries {
 		l.Info("dropped events due to max retries")
+		for _, e := range req.Events {
+			metrics.ClientRequestsDroppedCounter.WithLabelValues(
+				hostname,
+				e.Topic,
+			).Inc()
+		}
 		a.wg.Done()
 		return
 	}
