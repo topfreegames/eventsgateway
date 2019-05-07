@@ -37,13 +37,13 @@ import (
 
 var (
 	// APIResponseTime summary
-	APIResponseTime = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace:  "eventsgateway",
-			Subsystem:  "api",
-			Name:       "response_time_ms",
-			Help:       "the response time in ms of api routes",
-			Objectives: map[float64]float64{0.7: 0.02, 0.95: 0.005, 0.99: 0.001},
+	APIResponseTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "api",
+			Name:      "response_time_ms",
+			Help:      "the response time in ms of api routes",
+			Buckets:   []float64{1, 3, 5, 10, 25, 50, 100, 150, 200, 250, 300},
 		},
 		[]string{"hostname", "route", "topic", "retry"},
 	)
@@ -71,13 +71,14 @@ var (
 	)
 
 	// ClientRequestsResponseTime is the time the client take to talk to the server
-	ClientRequestsResponseTime = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Namespace:  "eventsgateway",
-		Subsystem:  "client",
-		Name:       "response_time_ms",
-		Help:       "the response time in ms of calls to server",
-		Objectives: map[float64]float64{0.7: 0.02, 0.95: 0.005, 0.99: 0.001},
-	},
+	ClientRequestsResponseTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "client",
+			Name:      "response_time_ms",
+			Help:      "the response time in ms of calls to server",
+			Buckets:   []float64{1, 3, 5, 10, 25, 50, 100, 150, 200, 250, 300},
+		},
 		[]string{"clientHost", "route", "topic", "retry"},
 	)
 

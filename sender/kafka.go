@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -45,12 +46,19 @@ func (k *KafkaSender) SendEvents(
 	ctx context.Context,
 	events []*pb.Event,
 ) []int64 {
+	wg := sync.WaitGroup{}
+	wg.Add(len(events))
 	failureIndexes := make([]int64, 0, len(events))
-	for i, e := range events {
-		if err := k.SendEvent(ctx, e); err != nil {
-			failureIndexes = append(failureIndexes, int64(i))
-		}
+	for i := range events {
+		j := i
+		go func() {
+			if err := k.SendEvent(ctx, events[j]); err != nil {
+				failureIndexes = append(failureIndexes, int64(j))
+			}
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 	return failureIndexes
 }
 
