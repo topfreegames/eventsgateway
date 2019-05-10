@@ -43,7 +43,7 @@ var (
 			Subsystem: "api",
 			Name:      "response_time_ms",
 			Help:      "the response time in ms of api routes",
-			Buckets:   []float64{1, 3, 5, 10, 25, 50, 100, 150, 200, 250, 300},
+			Buckets:   []float64{1, 5, 10, 30, 90, 160, 240},
 		},
 		[]string{"hostname", "route", "topic", "retry"},
 	)

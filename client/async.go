@@ -172,8 +172,21 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 				err.Error(),
 			).Inc()
 		}
+		return err
 	}
-	for _, e := range events {
+	failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
+	fC := 0
+	for i, e := range events {
+		if len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
+			metrics.ClientRequestsFailureCounter.WithLabelValues(
+				hostname,
+				method,
+				e.Topic,
+				retry,
+				"couldn't produce event",
+			).Inc()
+			fC++
+		}
 		metrics.ClientRequestsSuccessCounter.WithLabelValues(
 			hostname,
 			method,

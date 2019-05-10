@@ -150,18 +150,32 @@ func (a *App) metricsReporterInterceptor(
 				err.Error(),
 			).Inc()
 		}
-	} else {
-		for _, e := range events {
-			metrics.APIRequestsSuccessCounter.WithLabelValues(
+		return res, err
+	}
+	failureIndexes := []int64{}
+	if _, ok := res.(*pb.SendEventsResponse); ok {
+		failureIndexes = res.(*pb.SendEventsResponse).FailureIndexes
+	}
+	fC := 0
+	for i, e := range events {
+		if len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
+			metrics.APIRequestsFailureCounter.WithLabelValues(
 				hostname,
 				info.FullMethod,
 				e.Topic,
 				retry,
+				"couldn't produce event",
 			).Inc()
+			fC++
 		}
+		metrics.APIRequestsSuccessCounter.WithLabelValues(
+			hostname,
+			info.FullMethod,
+			e.Topic,
+			retry,
+		).Inc()
 	}
-
-	return res, err
+	return res, nil
 }
 
 // Run runs the app
