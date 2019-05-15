@@ -149,7 +149,6 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 		elapsedTime := float64(time.Since(startTime).Nanoseconds() / 1000000)
 		for _, e := range events {
 			metrics.ClientRequestsResponseTime.WithLabelValues(
-				hostname,
 				method,
 				e.Topic,
 				retry,
@@ -165,7 +164,6 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 		l.WithError(err).Error("error processing request")
 		for _, e := range events {
 			metrics.ClientRequestsFailureCounter.WithLabelValues(
-				hostname,
 				method,
 				e.Topic,
 				retry,
@@ -179,7 +177,6 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	for i, e := range events {
 		if len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
 			metrics.ClientRequestsFailureCounter.WithLabelValues(
-				hostname,
 				method,
 				e.Topic,
 				retry,
@@ -188,7 +185,6 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 			fC++
 		}
 		metrics.ClientRequestsSuccessCounter.WithLabelValues(
-			hostname,
 			method,
 			e.Topic,
 			retry,
@@ -249,7 +245,6 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		l.Info("dropped events due to max retries")
 		for _, e := range req.Events {
 			metrics.ClientRequestsDroppedCounter.WithLabelValues(
-				hostname,
 				e.Topic,
 			).Inc()
 		}

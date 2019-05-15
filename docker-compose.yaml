@@ -35,32 +35,12 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock'
     networks:
       - eventsgateway
-  gobblin:
-    image: 797740695898.dkr.ecr.us-east-1.amazonaws.com/gobblin:v0.14.0-custom
-    volumes:
-      - ./gobblin/conf:/etc/opt/job-conf
-      - ./gobblin/work-dir:/home/gobblin/work-dir
-      - ./gobblin/logs:/var/log/gobblin
-      - ./gobblin/gobblin-standalone.properties:/opt/gobblin/gobblin-dist/conf/gobblin-standalone.properties
-      - ./gobblin/log4j-config.xml:/home/gobblin/log4j-config.xml
-    depends_on:
-      - "kafka"
-      - "localstack"
-    environment:
-      KAFKA_BROKERS: "kafka:9092"
-      S3_ENDPOINT: "http://localstack:4572"
-      S3_BUCKET: "eventsgateway-local"
-      LOG_LEVEL: "DEBUG"
-      GOBBLIN_PUBLISHER_PATH: "/output"
-      FWDIR_LIB: "/opt/gobblin/gobblin-dist/lib"
-    networks:
-      - eventsgateway
-  pyspark-notebook:
-    image: jupyter/pyspark-notebook
+  spark-notebook:
+    image: jupyter/all-spark-notebook
     ports:
       - '8888:8888'
     volumes:
-      - ./pyspark-notebook/work:/home/jovyan/work
+      - ./spark-notebook/work:/home/jovyan/work
     networks:
       - eventsgateway
 
