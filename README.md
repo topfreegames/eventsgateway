@@ -3,6 +3,42 @@ TFGCo EventsGateway
 
 [![Build Status](https://travis-ci.org/topfreegames/eventsgateway.svg?branch=master)](https://travis-ci.org/topfreegames/eventsgateway)
 
+## [Development README](#development-readme)
+## [Client README](#client-readme)
+
+<br/><br/>
+
+# Client README
+
+## Configuration
+
+About client.NewClient(...) arguments:
+
+* configPrefix: whatever comes just before `client` portion of your config
+* config: a viper config with at least a `client` key holding Events Gateway settings
+* logger: a logrus.FieldLogger instance
+* client: should be nil for most cases, except for unit testing
+* opts: extra []grpc.DialOption objects
+
+`client` config format, with defaults:
+
+```
+client:
+  async: false # if you want to use the async or sync dispatch
+  channelBuffer: 500 # (async-only) size of the channel that holds events
+  lingerInterval: 500ms # (async-only) how long to wait before sending messages, in the hopes of filling the batch
+  batchSize: 10 # (async-only) maximum number of messages to send in a batch
+  maxRetries: 3 # (async-only) how many times to retry a dispatch if it fails
+  retryInterval: 1s # (async-only) first wait time before a retry, formula => 2^retryNumber * retryInterval
+  numRoutines: 2 # (async-only) number of go routines that read from events channel and send batches
+  kafkatopic: default-topic # default topic to send messages
+  grpc:
+    serverAddress: localhost:5000
+    timeout: 500ms
+```
+
+# Development README
+
 ## Running locally
 
 All dependencies required to produce and consume events locally are bundled in this project.

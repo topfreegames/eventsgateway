@@ -32,6 +32,7 @@ type Client struct {
 }
 
 // NewClient ctor
+// configPrefix is whatever comes before `client` subpart of config
 func NewClient(
 	configPrefix string,
 	config *viper.Viper,
