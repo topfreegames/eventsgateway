@@ -45,7 +45,7 @@ var (
 			Help:      "the response time in ms of api routes",
 			Buckets:   []float64{1, 5, 10, 30, 90, 160, 240},
 		},
-		[]string{"hostname", "route", "topic", "retry"},
+		[]string{"route", "topic", "retry"},
 	)
 
 	// APIRequestsSuccessCounter counter
@@ -56,7 +56,7 @@ var (
 			Name:      "requests_success_counter",
 			Help:      "A counter of succeeded api requests",
 		},
-		[]string{"hostname", "route", "topic", "retry"},
+		[]string{"route", "topic", "retry"},
 	)
 
 	// APIRequestsFailureCounter counter
@@ -67,7 +67,7 @@ var (
 			Name:      "requests_failure_counter",
 			Help:      "A counter of failed api requests",
 		},
-		[]string{"hostname", "route", "topic", "retry", "reason"},
+		[]string{"route", "topic", "retry", "reason"},
 	)
 
 	// ClientRequestsResponseTime is the time the client take to talk to the server
@@ -79,7 +79,7 @@ var (
 			Help:      "the response time in ms of calls to server",
 			Buckets:   []float64{1, 3, 5, 10, 25, 50, 100, 150, 200, 250, 300},
 		},
-		[]string{"clientHost", "route", "topic", "retry"},
+		[]string{"route", "topic", "retry"},
 	)
 
 	// ClientRequestsSuccessCounter is the count of successfull calls to the server
@@ -89,7 +89,7 @@ var (
 		Name:      "requests_success_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
-		[]string{"clientHost", "route", "topic", "retry"},
+		[]string{"route", "topic", "retry"},
 	)
 
 	// ClientRequestsFailureCounter is the count of failed calls to the server
@@ -99,7 +99,7 @@ var (
 		Name:      "requests_failure_counter",
 		Help:      "the count of failed client requests to the server",
 	},
-		[]string{"clientHost", "route", "topic", "retry", "reason"},
+		[]string{"route", "topic", "retry", "reason"},
 	)
 
 	// ClientRequestsDroppedCounter is the count of requests that were dropped due
@@ -110,7 +110,7 @@ var (
 		Name:      "requests_dropped_counter",
 		Help:      "the count of dropped client requests to the server",
 	},
-		[]string{"clientHost", "topic"},
+		[]string{"topic"},
 	)
 )
 

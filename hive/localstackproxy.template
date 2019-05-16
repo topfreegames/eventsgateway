@@ -7,6 +7,6 @@ server {
     server_name eventsgatewaylocalproxy;
 
     location / {
-      proxy_pass http://localstack:4572/eventsgateway-local;
+      proxy_pass http://localstack:4572/eventsgateway-local/;
     }
 }

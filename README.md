@@ -15,7 +15,9 @@ These are the necessary dependencies for EventsGateway server.
 
 3. `make producer` executes a client that sends one dummy event.
 
-4. `make gobblin` runs a gobblin job that consumes from sv-uploads-* kafka topics and creates partitioned avro files in s3 (localstack) eventsgateway-local.
+4. `make spark-notebook` runs a jupyter-notebook container with a mounted notebook to consume from Kafka and write ORC files to S3.
+
+Checkout the localhost address to access the Web UI over the container logs.
 
 5. `make hive-start` starts hive stack containers necessary to create tables in hive-metastore and to query from a presto client.
 
@@ -35,30 +37,7 @@ Note that `default-topic` should be replaced by the topic you're using in your c
 
 Run it inside `docker exec -it hive_hive-server_1 sh -c "/opt/hive/bin/beeline -u jdbc:hive2://localhost:10000"`.
 
-```
-CREATE EXTERNAL TABLE `table_name` (
-  `id` string COMMENT 'from deserializer', 
-  `name` string COMMENT 'from deserializer', 
-  `props` map<string,string> COMMENT 'from deserializer', 
-  `servertimestamp` bigint COMMENT 'from deserializer', 
-  `clienttimestamp` bigint COMMENT 'from deserializer')
-PARTITIONED BY ( 
-  `year` string, 
-  `month` string, 
-  `day` string)
-ROW FORMAT SERDE 
-  'org.apache.hadoop.hive.serde2.avro.AvroSerDe' 
-WITH SERDEPROPERTIES ( 
-  'avro.schema.literal'='\n{\n  \"namespace\": \"com.tfgco.eventsgateway\",\n  \"type\": \"record\",\n  \"name\": \"Event\",\n  \"fields\": [\n    {\n      \"name\": \"id\",\n      \"type\": \"string\"\n    },\n    {\n      \"name\": \"name\",\n      \"type\": \"string\"\n    },\n    {\n      \"name\": \"props\",\n      \"default\": {},\n      \"type\": {\n\t  \"type\": \"map\",\n\t  \"values\": \"string\"\n      }\n    },\n    {\n      \"name\": \"serverTimestamp\",\n      \"type\": \"long\"\n    },\n    {\n      \"name\": \"clientTimestamp\",\n      \"type\": \"long\"\n    }\n  ]\n}\n') 
-STORED AS INPUTFORMAT 
-  'org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat' 
-OUTPUTFORMAT 
-  'org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat'
-LOCATION
-  's3a://eventsgateway-local/output/sv-uploads-default-topic/daily'
-TBLPROPERTIES (
-  'transient_lastDdlTime'='1551113653');
-```
+To get the commands necessary to create database and table, run the respective cell at the end of `eventsgateway-streaming-orc` notebook.
 
 After creation, you need to run `msck repair table table_name;` from hive server container to be able to query recent data.
 

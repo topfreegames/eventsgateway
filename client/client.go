@@ -10,7 +10,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -20,10 +19,6 @@ import (
 	"github.com/spf13/viper"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
-)
-
-var (
-	hostname, _ = os.Hostname()
 )
 
 // Client struct

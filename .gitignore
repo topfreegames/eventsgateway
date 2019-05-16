@@ -20,4 +20,5 @@ bin
 
 *.swp
 
-eventsgateway
+./eventsgateway
+spark-notebook/work/.ipynb_checkpoints

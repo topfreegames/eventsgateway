@@ -26,7 +26,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"time"
 
 	"github.com/topfreegames/eventsgateway/metrics"
@@ -41,10 +40,6 @@ import (
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 
 	"github.com/sirupsen/logrus"
-)
-
-var (
-	hostname, _ = os.Hostname()
 )
 
 // App is the app structure
@@ -129,7 +124,6 @@ func (a *App) metricsReporterInterceptor(
 		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
 		for _, e := range events {
 			metrics.APIResponseTime.WithLabelValues(
-				hostname,
 				info.FullMethod,
 				e.Topic,
 				retry,
@@ -143,7 +137,6 @@ func (a *App) metricsReporterInterceptor(
 		l.WithError(err).Error("error processing request")
 		for _, e := range events {
 			metrics.APIRequestsFailureCounter.WithLabelValues(
-				hostname,
 				info.FullMethod,
 				e.Topic,
 				retry,
@@ -160,7 +153,6 @@ func (a *App) metricsReporterInterceptor(
 	for i, e := range events {
 		if len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
 			metrics.APIRequestsFailureCounter.WithLabelValues(
-				hostname,
 				info.FullMethod,
 				e.Topic,
 				retry,
@@ -169,7 +161,6 @@ func (a *App) metricsReporterInterceptor(
 			fC++
 		}
 		metrics.APIRequestsSuccessCounter.WithLabelValues(
-			hostname,
 			info.FullMethod,
 			e.Topic,
 			retry,
