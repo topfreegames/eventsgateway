@@ -6,10 +6,10 @@ client:
   async: false
   channelBuffer: 500
   lingerInterval: 500ms
-  batchSize: 50
+  batchSize: 10
   kafkatopic: default-topic
   maxRetries: 3
-  numRoutines: 5
+  numRoutines: 2
   retryInterval: 1s
   grpc:
     serverAddress: localhost:5000
