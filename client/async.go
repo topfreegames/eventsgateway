@@ -58,7 +58,7 @@ func newGRPCClientAsync(
 	a.batchSize = a.config.GetInt(batchSizeConf)
 
 	channelBufferConf := fmt.Sprintf("%sclient.channelBuffer", configPrefix)
-	a.config.SetDefault(channelBufferConf, 200)
+	a.config.SetDefault(channelBufferConf, 500)
 	channelBuffer := a.config.GetInt(channelBufferConf)
 	a.eventsChannel = make(chan *pb.Event, channelBuffer)
 
