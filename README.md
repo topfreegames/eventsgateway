@@ -22,7 +22,7 @@ About client.NewClient(...) arguments:
 
 `client` config format, with defaults:
 
-```
+```yaml
 client:
   async: false # if you want to use the async or sync dispatch
   channelBuffer: 500 # (async-only) size of the channel that holds events
@@ -35,6 +35,43 @@ client:
   grpc:
     serverAddress: localhost:5000
     timeout: 500ms
+```
+
+Code example:
+
+```go
+import (
+  "context"
+
+  "github.com/spf13/viper"
+  "github.com/topfreegames/eventsgateway"
+  "github.com/sirupsen/logrus"
+)
+
+func ConfigureEventsGateway() (*eventsgateway.Client, error) {
+  config := viper.New() // empty Viper config
+  config.Set("eventsgateway.client.async", true)
+  config.Set("eventsgateway.client.kafkatopic", "my-client-default-topic")
+  logger := logrus.WithFields(logrus.Fields{"some": "field"})
+  client, err := eventsgateway.NewClient("eventsgateway", config, logger, nil)
+  if err != nil {
+    return nil, err
+  }
+}
+
+func main() {
+  client, err := ConfigureEventsGateway()
+  if err != nil {
+    panic(err)
+  }
+  // here you pass along the context.Context you received,
+  // DON'T pass just a context.Background() if you have a previous context.Context
+  // Sync clients should handle errors accordingly
+  err := client.Send(context.Background(), "event-name", map[string]string{"some": "value"})
+  // Async clients error handling are transparent to the user 
+  client.Send(context.Background(), "event-name", map[string]string{"some": "value"})
+}
+
 ```
 
 # Development README
