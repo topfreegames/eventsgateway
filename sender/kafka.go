@@ -106,6 +106,7 @@ func (k *KafkaSender) SendEvent(
 
 	partition, offset, err := k.producer.Produce(topic, buf.Bytes())
 	if err != nil {
+		l.WithError(err).Error("failed to send event to kafka")
 		return err
 	}
 	l.WithFields(logrus.Fields{
