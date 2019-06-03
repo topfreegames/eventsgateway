@@ -43,8 +43,7 @@ RUN apk add --no-cache make git g++ bash python wget pkgconfig && \
     dep ensure && \
     make build && \
     mv bin/eventsgateway /app/eventsgateway && \
-    mv config /app/config && \
-    mv Sidecarfile /app/Sidecarfile
+    mv config /app/config
   
 WORKDIR /app
 

@@ -31,6 +31,7 @@ import (
 
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
+	"github.com/topfreegames/extensions/jaeger"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -69,6 +70,9 @@ func NewApp(host string, port int, log logrus.FieldLogger, config *viper.Viper) 
 }
 
 func (a *App) loadConfigurationDefaults() {
+	a.config.SetDefault("jaeger.disabled", true)
+	a.config.SetDefault("jaeger.samplingProbability", 0.1)
+	a.config.SetDefault("jaeger.serviceName", "events-gateway")
 	a.config.SetDefault("extensions.kafkaproducer.brokers", "localhost:9192")
 	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 3000000)
 	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1)
@@ -82,11 +86,24 @@ func (a *App) loadConfigurationDefaults() {
 
 func (a *App) configure() error {
 	a.loadConfigurationDefaults()
+	if err := a.configureJaeger(); err != nil {
+		return err
+	}
 	err := a.configureEventsForwarder()
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (a *App) configureJaeger() error {
+	opts := jaeger.Options{
+		Disabled:    a.config.GetBool("jaeger.disabled"),
+		Probability: a.config.GetFloat64("jaeger.samplingProbability"),
+		ServiceName: a.config.GetString("jaeger.serviceName"),
+	}
+	_, err := jaeger.Configure(opts)
+	return err
 }
 
 func (a *App) configureEventsForwarder() error {

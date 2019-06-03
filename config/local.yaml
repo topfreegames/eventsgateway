@@ -1,3 +1,7 @@
+jaeger:
+  disabled: true
+  samplingProbability: 0.1
+  serviceName: events-gateway
 extensions:
   kafkaproducer:
     brokers: localhost:9192

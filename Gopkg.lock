@@ -420,6 +420,7 @@
   digest = "1:a01580e67c32722dfa585197a3e92c10957709154f97e64fd638a599eef00171"
   name = "github.com/topfreegames/extensions"
   packages = [
+    "jaeger",
     "kafka",
     "kafka/interfaces",
     "util",
@@ -429,6 +430,7 @@
   version = "v8.1.0"
 
 [[projects]]
+  digest = "1:fd45a362676b6a392967184fbb15194e90d23b3d71e8befdfeca2363b5b9e0d2"
   name = "github.com/topfreegames/go-extensions-kafka"
   packages = ["."]
   pruneopts = ""
@@ -453,6 +455,40 @@
   pruneopts = ""
   revision = "58d2268fffea795793e6f3cfced61eaa727ab80f"
   version = "v1.6.1"
+
+[[projects]]
+  digest = "1:92c0006b9a06518452bad6275babc396a0b9afcdfe870d5494fe67a2beb6c2be"
+  name = "github.com/uber/jaeger-client-go"
+  packages = [
+    ".",
+    "config",
+    "internal/baggage",
+    "internal/baggage/remote",
+    "internal/spanlog",
+    "internal/throttler",
+    "internal/throttler/remote",
+    "log",
+    "rpcmetrics",
+    "thrift",
+    "thrift-gen/agent",
+    "thrift-gen/baggage",
+    "thrift-gen/jaeger",
+    "thrift-gen/sampling",
+    "thrift-gen/zipkincore",
+    "transport",
+    "utils",
+  ]
+  pruneopts = ""
+  revision = "2f47546e3facd43297739439600bcf43f44cce5d"
+  version = "v2.16.0"
+
+[[projects]]
+  digest = "1:2e2e1bf63381476d203354c0c3c4692d103e8d02ea2bfafe8e3f80a04c925b87"
+  name = "github.com/uber/jaeger-lib"
+  packages = ["metrics"]
+  pruneopts = ""
+  revision = "0e30338a695636fe5bcf7301e8030ce8dd2a8530"
+  version = "v2.0.0"
 
 [[projects]]
   branch = "master"
@@ -603,6 +639,7 @@
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
     "github.com/topfreegames/avro/go/eventsgateway/generated",
+    "github.com/topfreegames/extensions/jaeger",
     "github.com/topfreegames/extensions/kafka",
     "github.com/topfreegames/go-extensions-kafka",
     "github.com/topfreegames/protos/eventsgateway/grpc/generated",
