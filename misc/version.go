@@ -1,4 +1,4 @@
 package misc
 
 // Version eventsgateway version
-var Version = "v1.0.1"
+var Version = "v2.3.0"

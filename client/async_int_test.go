@@ -49,7 +49,10 @@ var _ = Describe("Async Client", func() {
 			var err error
 			consumer, err = extensions.NewConsumer(config, logger)
 			Expect(err).NotTo(HaveOccurred())
-			go consumer.ConsumeLoop()
+			go func() {
+				err := consumer.ConsumeLoop()
+				Expect(err).NotTo(HaveOccurred())
+			}()
 			consumer.WaitUntilReady()
 		})
 

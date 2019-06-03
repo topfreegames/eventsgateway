@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/viper"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/forwarder"
+	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -53,6 +54,7 @@ func (k *KafkaSender) SendEvents(
 		j := i
 		go func() {
 			if err := k.SendEvent(ctx, events[j]); err != nil {
+				k.logger.WithError(err).Error("failed to send event to kafka")
 				failureIndexes = append(failureIndexes, int64(j))
 			}
 			wg.Done()
@@ -104,9 +106,12 @@ func (k *KafkaSender) SendEvent(
 
 	topic := fmt.Sprintf("%s%s", k.topicPrefix, event.GetTopic())
 
-	partition, offset, err := k.producer.Produce(topic, buf.Bytes())
+	producer := k.producer
+	if sp, ok := k.producer.(*kafka.SyncProducer); ok {
+		producer = sp.WithContext(ctx)
+	}
+	partition, offset, err := producer.Produce(topic, buf.Bytes())
 	if err != nil {
-		l.WithError(err).Error("failed to send event to kafka")
 		return err
 	}
 	l.WithFields(logrus.Fields{

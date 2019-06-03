@@ -128,6 +128,22 @@
   version = "v1.6.1"
 
 [[projects]]
+  digest = "1:9a0b2dd1f882668a3d7fbcd424eed269c383a16f1faa3a03d14e0dd5fba571b1"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = ["."]
+  pruneopts = ""
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:0c93b4970c254d3f8f76c3e8eb72571d6f24a15415f9c418ecb0801ba5765a90"
+  name = "github.com/grpc-ecosystem/grpc-opentracing"
+  packages = ["go/otgrpc"]
+  pruneopts = ""
+  revision = "8e809c8a86450a29b90dcc9efbf062d0fe6d9746"
+
+[[projects]]
   branch = "master"
   digest = "1:147d671753effde6d3bcd58fc74c1d67d740196c84c280c762a5417319499972"
   name = "github.com/hashicorp/hcl"
@@ -225,6 +241,18 @@
   pruneopts = ""
   revision = "003f63b7f4cff3fc95357005358af2de0f5fe152"
   version = "v1.3.0"
+
+[[projects]]
+  digest = "1:1fc4897d3cc482d070651563c16a51489296cd9150e6d53fb7ff4d59a24334bc"
+  name = "github.com/opentracing/opentracing-go"
+  packages = [
+    ".",
+    "ext",
+    "log",
+  ]
+  pruneopts = ""
+  revision = "659c90643e714681897ec2521c60567dd21da733"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:d60cfeee185019d4fcd35e8c89c83aff576e4723b6100300bf67b05be961388f"
@@ -401,6 +429,21 @@
   version = "v8.1.0"
 
 [[projects]]
+  name = "github.com/topfreegames/go-extensions-kafka"
+  packages = ["."]
+  pruneopts = ""
+  revision = "2d20d4c3b3f75590133d3e461a1cf3098ff93f15"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:a0bf1c87d73c581518e25337862186dda8b7def3b2647872ca9e131a140fcbc2"
+  name = "github.com/topfreegames/go-extensions-tracing"
+  packages = ["."]
+  pruneopts = ""
+  revision = "b2a1ed83a5ee950bb96756ca9213819fc7da33e0"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:b6a1671c30cce138036005137c16999b583bcce79ef8ad4741b53fb83c3492bb"
   name = "github.com/topfreegames/protos"
   packages = [
@@ -492,7 +535,7 @@
   revision = "4eb30f4778eed4c258ba66527a0d4f9ec8a36c45"
 
 [[projects]]
-  digest = "1:afc1b03a6d5ba3cbb2e0a12133e734d472e4df3b65f06e600a3d57a4b82f26cc"
+  digest = "1:6598c722afbc10dcbcace4e6504751b3a3b11f66d9251545fce457a66316c9a7"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -529,8 +572,8 @@
     "tap",
   ]
   pruneopts = ""
-  revision = "25c4f928eaa6d96443009bd842389fb4fa48664e"
-  version = "v1.20.1"
+  revision = "869adfc8d5a43efc0d05780ad109106f457f51e4"
+  version = "v1.21.0"
 
 [[projects]]
   branch = "v2"
@@ -547,8 +590,11 @@
     "github.com/Shopify/sarama",
     "github.com/golang/mock/gomock",
     "github.com/gorilla/mux",
+    "github.com/grpc-ecosystem/go-grpc-middleware",
+    "github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
+    "github.com/opentracing/opentracing-go",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/satori/go.uuid",
@@ -558,10 +604,12 @@
     "github.com/spf13/viper",
     "github.com/topfreegames/avro/go/eventsgateway/generated",
     "github.com/topfreegames/extensions/kafka",
+    "github.com/topfreegames/go-extensions-kafka",
     "github.com/topfreegames/protos/eventsgateway/grpc/generated",
     "github.com/topfreegames/protos/eventsgateway/grpc/mock",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/keepalive",
     "google.golang.org/grpc/status",
   ]
   solver-name = "gps-cdcl"

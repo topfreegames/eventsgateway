@@ -26,17 +26,21 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 
 	"github.com/Shopify/sarama"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/forwarder"
-	extensions "github.com/topfreegames/extensions/kafka"
+	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 
 	"github.com/sirupsen/logrus"
@@ -44,13 +48,12 @@ import (
 
 // App is the app structure
 type App struct {
-	Server          *Server // tests manipulate this field
-	config          *viper.Viper
-	eventsForwarder forwarder.Forwarder
-	grpcServer      *grpc.Server
-	host            string
-	log             logrus.FieldLogger
-	port            int
+	Server     *Server // tests manipulate this field
+	config     *viper.Viper
+	grpcServer *grpc.Server
+	host       string
+	log        logrus.FieldLogger
+	port       int
 }
 
 // NewApp creates a new App object
@@ -70,6 +73,11 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 3000000)
 	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1)
 	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 0)
+	a.config.SetDefault("server.maxConnectionIdle", "20s")
+	a.config.SetDefault("server.maxConnectionAge", "20s")
+	a.config.SetDefault("server.maxConnectionAgeGrace", "1s")
+	a.config.SetDefault("server.Time", "10s")
+	a.config.SetDefault("server.Timeout", "500ms")
 }
 
 func (a *App) configure() error {
@@ -90,7 +98,8 @@ func (a *App) configureEventsForwarder() error {
 	kafkaConf.Producer.Flush.Frequency = time.Duration(a.config.GetInt("extensions.kafkaproducer.linger.ms")) * time.Millisecond
 	kafkaConf.Producer.RequiredAcks = sarama.WaitForLocal
 	kafkaConf.Producer.Compression = sarama.CompressionSnappy
-	k, err := extensions.NewSyncProducer(a.config, a.log.(*logrus.Logger), kafkaConf)
+	brokers := strings.Split(a.config.GetString("extensions.kafkaproducer.brokers"), ",")
+	k, err := kafka.NewSyncProducer(brokers, kafkaConf)
 	if err != nil {
 		return err
 	}
@@ -132,6 +141,7 @@ func (a *App) metricsReporterInterceptor(
 		l.WithField("elapsedTime", elapsedTime).Debug("request processed")
 	}(time.Now())
 
+	reportedFailures := false
 	res, err := handler(ctx, req)
 	if err != nil {
 		l.WithError(err).Error("error processing request")
@@ -143,6 +153,7 @@ func (a *App) metricsReporterInterceptor(
 				err.Error(),
 			).Inc()
 		}
+		reportedFailures = true
 		return res, err
 	}
 	failureIndexes := []int64{}
@@ -151,7 +162,7 @@ func (a *App) metricsReporterInterceptor(
 	}
 	fC := 0
 	for i, e := range events {
-		if len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
+		if !reportedFailures && len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
 			metrics.APIRequestsFailureCounter.WithLabelValues(
 				info.FullMethod,
 				e.Topic,
@@ -179,7 +190,18 @@ func (a *App) Run() {
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
 	var opts []grpc.ServerOption
-	opts = append(opts, grpc.UnaryInterceptor(a.metricsReporterInterceptor))
+	tracer := opentracing.GlobalTracer()
+	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+		otgrpc.OpenTracingServerInterceptor(tracer),
+		a.metricsReporterInterceptor,
+	)))
+	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
+		MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),
+		MaxConnectionAge:      a.config.GetDuration("server.maxConnectionAge"),
+		MaxConnectionAgeGrace: a.config.GetDuration("server.maxConnectionAgeGrace"),
+		Time:                  a.config.GetDuration("server.Time"),
+		Timeout:               a.config.GetDuration("server.Timeout"),
+	}))
 	a.grpcServer = grpc.NewServer(opts...)
 
 	pb.RegisterGRPCForwarderServer(a.grpcServer, a.Server)
