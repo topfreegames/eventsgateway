@@ -118,8 +118,10 @@ func (a *gRPCClientAsync) configureGRPCForwarderClient(
 	dialOpts := append(
 		[]grpc.DialOption{
 			grpc.WithInsecure(),
-			grpc.WithUnaryInterceptor(otgrpc.OpenTracingClientInterceptor(tracer)),
-			grpc.WithUnaryInterceptor(a.metricsReporterInterceptor),
+			grpc.WithChainUnaryInterceptor(
+				otgrpc.OpenTracingClientInterceptor(tracer),
+				a.metricsReporterInterceptor,
+			),
 		},
 		opts...,
 	)
