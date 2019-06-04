@@ -430,12 +430,12 @@
   version = "v8.1.0"
 
 [[projects]]
-  digest = "1:fd45a362676b6a392967184fbb15194e90d23b3d71e8befdfeca2363b5b9e0d2"
+  digest = "1:1c0c398a7b5fe79199120906deb7f61170a2b3e44b1133f6764eb44272feb849"
   name = "github.com/topfreegames/go-extensions-kafka"
   packages = ["."]
   pruneopts = ""
-  revision = "2d20d4c3b3f75590133d3e461a1cf3098ff93f15"
-  version = "v1.0.0"
+  revision = "d731126ce0e6173b8b3894a160c1b6b23ed6c539"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:a0bf1c87d73c581518e25337862186dda8b7def3b2647872ca9e131a140fcbc2"
