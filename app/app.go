@@ -74,12 +74,12 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("jaeger.samplingProbability", 0.1)
 	a.config.SetDefault("jaeger.serviceName", "events-gateway")
 	a.config.SetDefault("extensions.kafkaproducer.brokers", "localhost:9192")
-	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 3000000)
-	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1)
+	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 1000000)
+	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1000000)
 	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 0)
 	a.config.SetDefault("server.maxConnectionIdle", "20s")
 	a.config.SetDefault("server.maxConnectionAge", "20s")
-	a.config.SetDefault("server.maxConnectionAgeGrace", "1s")
+	a.config.SetDefault("server.maxConnectionAgeGrace", "5s")
 	a.config.SetDefault("server.Time", "10s")
 	a.config.SetDefault("server.Timeout", "500ms")
 }
@@ -209,8 +209,8 @@ func (a *App) Run() {
 	var opts []grpc.ServerOption
 	tracer := opentracing.GlobalTracer()
 	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-		otgrpc.OpenTracingServerInterceptor(tracer),
 		a.metricsReporterInterceptor,
+		otgrpc.OpenTracingServerInterceptor(tracer),
 	)))
 	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),

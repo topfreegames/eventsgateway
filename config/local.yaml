@@ -5,11 +5,11 @@ jaeger:
 extensions:
   kafkaproducer:
     brokers: localhost:9192
-    maxMessageBytes: 3000000
+    maxMessageBytes: 1000000
 server:
   maxConnectionIdle: 20s
   maxConnectionAge: 20s
-  maxConnectionAgeGrace: 1s
+  maxConnectionAgeGrace: 5s
   Time: 10s
   Timeout: 500ms
 client:
