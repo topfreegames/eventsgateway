@@ -4,8 +4,13 @@ jaeger:
   serviceName: events-gateway
 extensions:
   kafkaproducer:
+    timeout: 250ms
     brokers: localhost:9192
     maxMessageBytes: 1000000
+    net:
+      maxOpenRequests: 100
+    retry:
+      max: 0
 server:
   maxConnectionIdle: 20s
   maxConnectionAge: 20s

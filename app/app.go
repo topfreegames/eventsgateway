@@ -73,10 +73,13 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("jaeger.disabled", true)
 	a.config.SetDefault("jaeger.samplingProbability", 0.1)
 	a.config.SetDefault("jaeger.serviceName", "events-gateway")
+	a.config.SetDefault("extensions.kafkaproducer.net.maxOpenRequests", 100)
 	a.config.SetDefault("extensions.kafkaproducer.brokers", "localhost:9192")
 	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 1000000)
+	a.config.SetDefault("extensions.kafkaproducer.timeout", "250ms")
 	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1000000)
 	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 0)
+	a.config.SetDefault("extensions.kafkaproducer.retry.max", 0)
 	a.config.SetDefault("server.maxConnectionIdle", "20s")
 	a.config.SetDefault("server.maxConnectionAge", "20s")
 	a.config.SetDefault("server.maxConnectionAgeGrace", "5s")
@@ -108,11 +111,14 @@ func (a *App) configureJaeger() error {
 
 func (a *App) configureEventsForwarder() error {
 	kafkaConf := sarama.NewConfig()
+	kafkaConf.Net.MaxOpenRequests = a.config.GetInt("extensions.kafkaproducer.net.maxOpenRequests")
 	kafkaConf.Producer.Return.Errors = true
 	kafkaConf.Producer.Return.Successes = true
 	kafkaConf.Producer.MaxMessageBytes = a.config.GetInt("extensions.kafkaproducer.maxMessageBytes")
+	kafkaConf.Producer.Timeout = a.config.GetDuration("extensions.kafkaproducer.timeout")
 	kafkaConf.Producer.Flush.Bytes = a.config.GetInt("extensions.kafkaproducer.batch.size")
 	kafkaConf.Producer.Flush.Frequency = time.Duration(a.config.GetInt("extensions.kafkaproducer.linger.ms")) * time.Millisecond
+	kafkaConf.Producer.Retry.Max = a.config.GetInt("extensions.kafkaproducer.retry.max")
 	kafkaConf.Producer.RequiredAcks = sarama.WaitForLocal
 	kafkaConf.Producer.Compression = sarama.CompressionSnappy
 	brokers := strings.Split(a.config.GetString("extensions.kafkaproducer.brokers"), ",")
