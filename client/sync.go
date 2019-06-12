@@ -137,7 +137,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 }
 
 func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), s.timeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 	_, err := s.client.SendEvent(ctxWithTimeout, event)
 	return err
