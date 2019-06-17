@@ -9,6 +9,10 @@ extensions:
     maxMessageBytes: 1000000
     net:
       maxOpenRequests: 100
+      dialTimeout: 500ms
+      readTimeout: 250ms
+      writeTimeout: 250ms
+      keepAlive: 60s
     retry:
       max: 0
 server:

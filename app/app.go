@@ -73,7 +73,11 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("jaeger.disabled", true)
 	a.config.SetDefault("jaeger.samplingProbability", 0.1)
 	a.config.SetDefault("jaeger.serviceName", "events-gateway")
-	a.config.SetDefault("extensions.kafkaproducer.net.maxOpenRequests", 100)
+	a.config.SetDefault("extensions.kafkaproducer.net.maxOpenRequests", 10)
+	a.config.SetDefault("extensions.kafkaproducer.net.dialTimeout", "500ms")
+	a.config.SetDefault("extensions.kafkaproducer.net.readTimeout", "250ms")
+	a.config.SetDefault("extensions.kafkaproducer.net.writeTimeout", "250ms")
+	a.config.SetDefault("extensions.kafkaproducer.net.keepAlive", "60s")
 	a.config.SetDefault("extensions.kafkaproducer.brokers", "localhost:9192")
 	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 1000000)
 	a.config.SetDefault("extensions.kafkaproducer.timeout", "250ms")
@@ -112,6 +116,10 @@ func (a *App) configureJaeger() error {
 func (a *App) configureEventsForwarder() error {
 	kafkaConf := sarama.NewConfig()
 	kafkaConf.Net.MaxOpenRequests = a.config.GetInt("extensions.kafkaproducer.net.maxOpenRequests")
+	kafkaConf.Net.DialTimeout = a.config.GetDuration("extensions.kafkaproducer.net.dialTimeout")
+	kafkaConf.Net.ReadTimeout = a.config.GetDuration("extensions.kafkaproducer.net.readTimeout")
+	kafkaConf.Net.WriteTimeout = a.config.GetDuration("extensions.kafkaproducer.net.writeTimeout")
+	kafkaConf.Net.KeepAlive = a.config.GetDuration("extensions.kafkaproducer.net.keepAlive")
 	kafkaConf.Producer.Return.Errors = true
 	kafkaConf.Producer.Return.Successes = true
 	kafkaConf.Producer.MaxMessageBytes = a.config.GetInt("extensions.kafkaproducer.maxMessageBytes")

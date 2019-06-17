@@ -11,8 +11,9 @@ TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s
 .PHONY: load-test producer spark-notebook
 
 setup: setup-hooks
-	@go get -u github.com/golang/dep...
+	@go get -u github.com/golang/dep/cmd/dep
 	@go get -u github.com/wadey/gocovmerge
+	@go get github.com/onsi/ginkgo/ginkgo
 	@dep ensure
 
 setup-hooks:
