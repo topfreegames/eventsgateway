@@ -19,33 +19,28 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-FROM golang:1.12-alpine
+FROM golang:1.12-alpine AS build-env
 
 MAINTAINER TFG Co <backend@tfgco.com>
 
 RUN mkdir -p /app/bin
 
-ENV LIBRDKAFKA_VERSION 1.0.0
-ENV CPLUS_INCLUDE_PATH /usr/local/include
-ENV LIBRARY_PATH /usr/local/lib
-ENV LD_LIBRARY_PATH /usr/local/lib
-
 ADD . /go/src/github.com/topfreegames/eventsgateway
 
-RUN apk add --no-cache make git g++ bash python wget pkgconfig && \
-    wget -O /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz https://github.com/edenhill/librdkafka/archive/v${LIBRDKAFKA_VERSION}.tar.gz && \
-    tar -xzf /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz -C /root && \
-    cd /root/librdkafka-${LIBRDKAFKA_VERSION} && \
-    ./configure && make && make install && make clean && ./configure --clean && \
-    rm -rf /root/librdkafka-* && \
+RUN apk add --no-cache make git g++ && \
     cd /go/src/github.com/topfreegames/eventsgateway && \
     go get -u github.com/golang/dep/cmd/dep && \
     dep ensure && \
     make build && \
     mv bin/eventsgateway /app/eventsgateway && \
     mv config /app/config
+
+FROM alpine:3.9
   
 WORKDIR /app
+
+COPY --from=build-env /app/eventsgateway /app/eventsgateway
+COPY --from=build-env /app/config /app/config
 
 EXPOSE 8080
 

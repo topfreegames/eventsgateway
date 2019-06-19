@@ -2,12 +2,20 @@
 
 
 [[projects]]
-  digest = "1:355a000a06dc127c555e408c3778f9968fe4c1680ea6a1c13ba5612274b78551"
+  digest = "1:e001bd0a052223a9dc871d38e303774759efae171abc702dedd312866400552d"
+  name = "github.com/DataDog/zstd"
+  packages = ["."]
+  pruneopts = ""
+  revision = "809b919c325d7887bff7bd876162af73db53e878"
+  version = "v1.4.0"
+
+[[projects]]
+  digest = "1:512a8ed4fcd5f35911f8e90a8af9668148835b6e2de8b591ea6f9db5bf45d2d5"
   name = "github.com/Shopify/sarama"
   packages = ["."]
   pruneopts = ""
-  revision = "3b1b38866a79f06deddf0487d5c27ba0697ccd65"
-  version = "v1.15.0"
+  revision = "ea9ab1c316850bee881a07bb2555ee8a685cd4b6"
+  version = "v1.22.1"
 
 [[projects]]
   branch = "master"
@@ -512,6 +520,7 @@
     "idna",
     "internal/timeseries",
     "lex/httplex",
+    "proxy",
     "trace",
   ]
   pruneopts = ""
@@ -633,6 +642,7 @@
     "github.com/opentracing/opentracing-go",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/rcrowley/go-metrics",
     "github.com/satori/go.uuid",
     "github.com/sirupsen/logrus",
     "github.com/sirupsen/logrus/hooks/test",

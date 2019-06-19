@@ -27,9 +27,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"time"
 
+	goMetrics "github.com/rcrowley/go-metrics"
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
 	"github.com/topfreegames/extensions/jaeger"
@@ -85,6 +87,7 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1000000)
 	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 0)
 	a.config.SetDefault("extensions.kafkaproducer.retry.max", 0)
+	a.config.SetDefault("extensions.kafkaproducer.clientId", "eventsgateway")
 	a.config.SetDefault("server.maxConnectionIdle", "20s")
 	a.config.SetDefault("server.maxConnectionAge", "20s")
 	a.config.SetDefault("server.maxConnectionAgeGrace", "5s")
@@ -115,8 +118,9 @@ func (a *App) configureJaeger() error {
 }
 
 func (a *App) configureEventsForwarder() error {
+	goMetrics.UseNilMetrics = true
 	if a.config.GetBool("extensions.sarama.logger.enabled") {
-		sarama.Logger = &log.Logger{}
+		sarama.Logger = log.New(os.Stdout, "sarama", log.Llongfile)
 	}
 	kafkaConf := sarama.NewConfig()
 	kafkaConf.Net.MaxOpenRequests = a.config.GetInt("extensions.kafkaproducer.net.maxOpenRequests")
@@ -133,6 +137,8 @@ func (a *App) configureEventsForwarder() error {
 	kafkaConf.Producer.Retry.Max = a.config.GetInt("extensions.kafkaproducer.retry.max")
 	kafkaConf.Producer.RequiredAcks = sarama.WaitForLocal
 	kafkaConf.Producer.Compression = sarama.CompressionSnappy
+	kafkaConf.ClientID = a.config.GetString("extensions.kafkaproducer.clientId")
+	kafkaConf.Version = sarama.V2_1_0_0
 	brokers := strings.Split(a.config.GetString("extensions.kafkaproducer.brokers"), ",")
 	k, err := kafka.NewSyncProducer(brokers, kafkaConf)
 	if err != nil {
