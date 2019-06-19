@@ -25,6 +25,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"time"
@@ -114,6 +115,9 @@ func (a *App) configureJaeger() error {
 }
 
 func (a *App) configureEventsForwarder() error {
+	if a.config.GetBool("extensions.sarama.logger.enabled") {
+		sarama.Logger = &log.Logger{}
+	}
 	kafkaConf := sarama.NewConfig()
 	kafkaConf.Net.MaxOpenRequests = a.config.GetInt("extensions.kafkaproducer.net.maxOpenRequests")
 	kafkaConf.Net.DialTimeout = a.config.GetDuration("extensions.kafkaproducer.net.dialTimeout")

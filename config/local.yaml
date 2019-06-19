@@ -3,12 +3,15 @@ jaeger:
   samplingProbability: 0.1
   serviceName: events-gateway
 extensions:
+  sarama:
+    logger:
+      enabled: true
   kafkaproducer:
     timeout: 250ms
     brokers: localhost:9192
     maxMessageBytes: 1000000
     net:
-      maxOpenRequests: 100
+      maxOpenRequests: 10
       dialTimeout: 500ms
       readTimeout: 250ms
       writeTimeout: 250ms
