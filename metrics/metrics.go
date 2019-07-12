@@ -129,6 +129,11 @@ func init() {
 		port = fmt.Sprintf(":%s", envPort)
 	}
 	go func() {
+		envDisabled, _ := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_DISABLED")
+		if envDisabled == "true" {
+			return
+		}
+
 		r := mux.NewRouter()
 		r.Handle("/metrics", promhttp.Handler())
 
