@@ -203,6 +203,14 @@
   revision = "a4e142e9c047c904fa2f1e144d9a84e6133024bc"
 
 [[projects]]
+  branch = "master"
+  digest = "1:2fe11a2a7aea74af78a10211f9d1638a4f85486535daf7847ce1c640dea062d5"
+  name = "github.com/mmcloughlin/professor"
+  packages = ["."]
+  pruneopts = ""
+  revision = "6b97112ab8b362d27f7976815eb0d35da5249099"
+
+[[projects]]
   digest = "1:32b27072cd55bd2fb7244de0425943d125da6a552ae2b6517cdd965a662baf18"
   name = "github.com/onsi/ginkgo"
   packages = [
@@ -637,6 +645,7 @@
     "github.com/gorilla/mux",
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc",
+    "github.com/mmcloughlin/professor",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/opentracing/opentracing-go",

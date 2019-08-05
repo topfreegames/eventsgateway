@@ -23,6 +23,9 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/mmcloughlin/professor"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/topfreegames/eventsgateway/app"
@@ -48,8 +51,18 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Panic(err)
 		}
+		launchPProf()
 		a.Run()
 	},
+}
+
+func launchPProf() {
+	fmt.Println("Starting PProf HTTP server")
+	config.SetDefault("pprof.enabled", true)
+	config.SetDefault("pprof.address", "localhost:6060")
+	if config.GetBool("pprof.enabled") {
+		professor.Launch(config.GetString("pprof.address"))
+	}
 }
 
 func init() {

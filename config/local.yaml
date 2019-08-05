@@ -44,6 +44,6 @@ loadtestclient:
   randPropsSize: small # small, medium, large, jumbo
 sentry:
   url: ""
-newrelic:
-  app: "eventsgateway"
-  key: ""
+pprof:
+  enabled: true
+  address: localhost:6060
