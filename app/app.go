@@ -85,7 +85,7 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 1000000)
 	a.config.SetDefault("extensions.kafkaproducer.timeout", "250ms")
 	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1000000)
-	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 0)
+	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 1)
 	a.config.SetDefault("extensions.kafkaproducer.retry.max", 0)
 	a.config.SetDefault("extensions.kafkaproducer.clientId", "eventsgateway")
 	a.config.SetDefault("server.maxConnectionIdle", "20s")

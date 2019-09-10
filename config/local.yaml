@@ -11,6 +11,8 @@ extensions:
     timeout: 250ms
     brokers: localhost:9192
     maxMessageBytes: 1000000
+    linger:
+      ms: 1
     net:
       maxOpenRequests: 10
       dialTimeout: 500ms
