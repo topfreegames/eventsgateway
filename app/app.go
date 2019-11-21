@@ -185,7 +185,7 @@ func (a *App) metricsReporterInterceptor(
 	reportedFailures := false
 	res, err := handler(ctx, req)
 	if err != nil {
-		l.WithError(err).Error(err.Error())
+		l.WithError(err).Error("error processing request")
 		for _, e := range events {
 			metrics.APIRequestsFailureCounter.WithLabelValues(
 				info.FullMethod,
