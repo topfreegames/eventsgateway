@@ -191,7 +191,7 @@ func (a *App) metricsReporterInterceptor(
 				info.FullMethod,
 				e.Topic,
 				retry,
-				err.Error(),
+				"error processing request",
 			).Inc()
 		}
 		reportedFailures = true
