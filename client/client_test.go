@@ -128,12 +128,13 @@ var _ = Describe("Client", func() {
 		})
 
 		It("should fail if event forward fails", func() {
+			topic := "custom-topic"
 			mockGRPCClient.EXPECT().SendEvent(
 				gomock.Any(),
 				gomock.Any(),
 			).Return(nil, errors.New("olar"))
 
-			err := c.Send(context.Background(), name, props)
+			err := c.SendToTopic(context.Background(), name, props, topic)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("olar"))
 		})
