@@ -97,7 +97,7 @@ func (c *Client) Send(
 		"event":     name,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(ctx, buildEvent(name, props, c.topic)); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, c.topic, time.Now())); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
@@ -117,7 +117,27 @@ func (c *Client) SendToTopic(
 		"topic":     topic,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(ctx, buildEvent(name, props, topic)); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, topic, time.Now())); err != nil {
+		l.WithError(err).Error("send event failed")
+		return err
+	}
+	return nil
+}
+
+// SendAtTime sends an event to another server via grpc with a specific timestamp
+func (c *Client) SendAtTime(
+	ctx context.Context,
+	name string,
+	props map[string]string,
+	time time.Time,
+) error {
+	l := c.logger.WithFields(logrus.Fields{
+		"operation": "sendAtTime",
+		"event":     name,
+		"time":      time,
+	})
+	l.Debug("sending event")
+	if err := c.client.send(ctx, buildEvent(name, props, c.topic, time)); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
@@ -133,12 +153,12 @@ func (c *Client) GracefulStop() error {
 	return c.client.GracefulStop()
 }
 
-func buildEvent(name string, props map[string]string, topic string) *pb.Event {
+func buildEvent(name string, props map[string]string, topic string, time time.Time) *pb.Event {
 	return &pb.Event{
 		Id:        uuid.NewV4().String(),
 		Name:      name,
 		Topic:     topic,
 		Props:     props,
-		Timestamp: time.Now().UnixNano() / 1000000,
+		Timestamp: time.UnixNano() / 1000000,
 	}
 }

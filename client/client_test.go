@@ -139,4 +139,38 @@ var _ = Describe("Client", func() {
 			Expect(err.Error()).To(Equal("olar"))
 		})
 	})
+
+	Describe("SendAtTime", func() {
+		It("should send event with a specific timestamp", func() {
+			t1 := time.Now()
+			expectedT1 := t1.UnixNano() / 1000000
+
+			mockGRPCClient.EXPECT().SendEvent(
+				gomock.Any(),
+				gomock.Any(),
+			).Do(func(ctx context.Context, event *pb.Event) {
+				Expect(event.Id).NotTo(BeEmpty())
+				Expect(event.Name).To(Equal(name))
+				Expect(event.Topic).To(Equal("test-topic"))
+				Expect(event.Props).To(Equal(props))
+				Expect(event.Timestamp).To(BeNumerically("~", expectedT1, 100))
+			}).Return(nil, nil)
+
+			err := c.SendAtTime(context.Background(), name, props, t1)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail if event forward fails", func() {
+			t1 := time.Now()
+
+			mockGRPCClient.EXPECT().SendEvent(
+				gomock.Any(),
+				gomock.Any(),
+			).Return(nil, errors.New("olar"))
+
+			err := c.SendAtTime(context.Background(), name, props, t1)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("olar"))
+		})
+	})
 })
