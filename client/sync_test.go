@@ -34,7 +34,7 @@ var _ = Describe("Sync Client", func() {
 
 	BeforeEach(func() {
 		var err error
-		c, err = client.NewClient("", config, logger, mockGRPCClient)
+		c, err = client.NewClient("", config, log, mockGRPCClient)
 		Expect(err).NotTo(HaveOccurred())
 		now = time.Now().UnixNano() / 1000000
 	})
@@ -52,7 +52,7 @@ var _ = Describe("Sync Client", func() {
 
 		BeforeEach(func() {
 			var err error
-			c, err = client.NewClient("", config, logger, mockGRPCClient)
+			c, err = client.NewClient("", config, log, mockGRPCClient)
 			Expect(err).NotTo(HaveOccurred())
 			now = time.Now().UnixNano() / 1000000
 		})

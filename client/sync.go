@@ -14,8 +14,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
@@ -25,14 +25,14 @@ type gRPCClientSync struct {
 	client  pb.GRPCForwarderClient
 	config  *viper.Viper
 	conn    *grpc.ClientConn
-	logger  logrus.FieldLogger
+	logger  logger.Logger
 	timeout time.Duration
 }
 
 func newGRPCClientSync(
 	configPrefix string,
 	config *viper.Viper,
-	logger logrus.FieldLogger,
+	logger logger.Logger,
 	serverAddress string,
 	client pb.GRPCForwarderClient,
 	opts ...grpc.DialOption,
@@ -44,7 +44,7 @@ func newGRPCClientSync(
 	timeoutConf := fmt.Sprintf("%sclient.grpc.timeout", configPrefix)
 	s.config.SetDefault(timeoutConf, 500*time.Millisecond)
 	s.timeout = s.config.GetDuration(timeoutConf)
-	s.logger = logger.WithFields(logrus.Fields{
+	s.logger = logger.WithFields(map[string]interface{}{
 		"timeout": s.timeout,
 	})
 	if err := s.configureGRPCForwarderClient(
@@ -66,7 +66,7 @@ func (s *gRPCClientSync) configureGRPCForwarderClient(
 		s.client = client
 		return nil
 	}
-	s.logger.WithFields(logrus.Fields{
+	s.logger.WithFields(map[string]interface{}{
 		"operation": "configureGRPCForwarderClient",
 	}).Info("connecting to grpc server")
 	tracer := opentracing.GlobalTracer()
@@ -99,7 +99,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 	invoker grpc.UnaryInvoker,
 	opts ...grpc.CallOption,
 ) error {
-	l := s.logger.WithFields(logrus.Fields{
+	l := s.logger.WithFields(map[string]interface{}{
 		"method": method,
 	})
 
@@ -112,7 +112,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 			event.Topic,
 			"0",
 		).Observe(elapsedTime)
-		l.WithFields(logrus.Fields{
+		l.WithFields(map[string]interface{}{
 			"elapsedTime": elapsedTime,
 			"reply":       reply.(*pb.SendEventResponse),
 		}).Debug("request processed")

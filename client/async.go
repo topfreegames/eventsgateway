@@ -17,8 +17,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	"github.com/opentracing/opentracing-go"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
@@ -31,7 +31,7 @@ type gRPCClientAsync struct {
 	eventsChannel  chan *pb.Event
 	lingerInterval time.Duration
 	batchSize      int
-	logger         logrus.FieldLogger
+	logger         logger.Logger
 	maxRetries     int
 	retryInterval  time.Duration
 	timeout        time.Duration
@@ -41,7 +41,7 @@ type gRPCClientAsync struct {
 func newGRPCClientAsync(
 	configPrefix string,
 	config *viper.Viper,
-	logger logrus.FieldLogger,
+	logger logger.Logger,
 	serverAddress string,
 	client pb.GRPCForwarderClient,
 	opts ...grpc.DialOption,
@@ -76,7 +76,7 @@ func newGRPCClientAsync(
 	a.config.SetDefault(timeoutConf, 500*time.Millisecond)
 	a.timeout = a.config.GetDuration(timeoutConf)
 
-	a.logger = a.logger.WithFields(logrus.Fields{
+	a.logger = a.logger.WithFields(map[string]interface{}{
 		"lingerInterval": a.lingerInterval,
 		"batchSize":      a.batchSize,
 		"channelBuffer":  channelBuffer,
@@ -91,7 +91,7 @@ func newGRPCClientAsync(
 	a.config.SetDefault(numRoutinesConf, 5)
 	numSendRoutines := a.config.GetInt(numRoutinesConf)
 
-	a.logger = a.logger.WithFields(logrus.Fields{
+	a.logger = a.logger.WithFields(map[string]interface{}{
 		"numRoutines": numSendRoutines,
 	})
 
@@ -111,7 +111,7 @@ func (a *gRPCClientAsync) configureGRPCForwarderClient(
 		a.client = client
 		return nil
 	}
-	a.logger.WithFields(logrus.Fields{
+	a.logger.WithFields(map[string]interface{}{
 		"operation": "configureGRPCForwarderClient",
 	}).Info("connecting to grpc server")
 	tracer := opentracing.GlobalTracer()
@@ -144,7 +144,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	invoker grpc.UnaryInvoker,
 	opts ...grpc.CallOption,
 ) error {
-	l := a.logger.WithFields(logrus.Fields{
+	l := a.logger.WithFields(map[string]interface{}{
 		"method": method,
 	})
 
@@ -160,7 +160,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 				retry,
 			).Observe(elapsedTime)
 		}
-		l.WithFields(logrus.Fields{
+		l.WithFields(map[string]interface{}{
 			"elapsedTime": elapsedTime,
 			"reply":       reply.(*pb.SendEventsResponse),
 		}).Debug("request processed")
@@ -240,7 +240,7 @@ func (a *gRPCClientAsync) sendRoutine() {
 }
 
 func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) {
-	l := a.logger.WithFields(logrus.Fields{
+	l := a.logger.WithFields(map[string]interface{}{
 		"operation":  "sendEvents",
 		"requestId":  req.Id,
 		"retryCount": retryCount,
@@ -273,7 +273,7 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		return
 	}
 	if res != nil && len(res.FailureIndexes) != 0 {
-		l.WithFields(logrus.Fields{
+		l.WithFields(map[string]interface{}{
 			"failureIndexes": res.FailureIndexes,
 		}).Error("failed to send events")
 		time.Sleep(time.Duration(math.Pow(2, float64(retryCount))) * a.retryInterval)

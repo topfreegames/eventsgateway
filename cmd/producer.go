@@ -25,6 +25,7 @@ package cmd
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
 	"github.com/topfreegames/eventsgateway/producer"
 )
 
@@ -41,7 +42,7 @@ var producerCMD = &cobra.Command{
 		if json {
 			log.Formatter = new(logrus.JSONFormatter)
 		}
-		p, err := producer.NewProducer(log, config)
+		p, err := producer.NewProducer(logruswrapper.NewWithLogger(log), config)
 		if err != nil {
 			log.Panic(err)
 		}

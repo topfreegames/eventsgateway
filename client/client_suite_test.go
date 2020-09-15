@@ -12,9 +12,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/logger"
 
 	"testing"
 
@@ -29,15 +28,13 @@ func TestClient(t *testing.T) {
 
 var (
 	config         *viper.Viper
-	hook           *test.Hook
-	logger         *logrus.Logger
+	log            logger.Logger
 	mockCtrl       *gomock.Controller
 	mockGRPCClient *mockpb.MockGRPCForwarderClient
 )
 
 var _ = BeforeEach(func() {
-	logger, hook = test.NewNullLogger()
-	logger.Level = logrus.DebugLevel
+	log = &logger.NullLogger{}
 	config, _ = GetDefaultConfig()
 
 	mockCtrl = gomock.NewController(GinkgoT())

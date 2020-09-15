@@ -16,7 +16,7 @@ About client.NewClient(...) arguments:
 
 * configPrefix: whatever comes just before `client` portion of your config
 * config: a viper config with at least a `client` key holding Events Gateway settings
-* logger: a logrus.FieldLogger instance
+* logger: a logger.Logger instance
 * client: should be nil for most cases, except for unit testing
 * opts: extra []grpc.DialOption objects
 
@@ -45,14 +45,14 @@ import (
 
   "github.com/spf13/viper"
   "github.com/topfreegames/eventsgateway"
-  "github.com/sirupsen/logrus"
+  "github.com/topfreegames/eventsgateway/logger"
 )
 
 func ConfigureEventsGateway() (*eventsgateway.Client, error) {
   config := viper.New() // empty Viper config
   config.Set("eventsgateway.client.async", true)
   config.Set("eventsgateway.client.kafkatopic", "my-client-default-topic")
-  logger := logrus.WithFields(logrus.Fields{"some": "field"})
+  logger := &logger.NullLogger{} // Initialize you logger.Logger implementation here
   client, err := eventsgateway.NewClient("eventsgateway", config, logger, nil)
   if err != nil {
     return nil, err

@@ -31,22 +31,21 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-
-	"github.com/sirupsen/logrus"
+	"github.com/topfreegames/eventsgateway/logger"
 )
 
 // LoadTest holds runners clients
 type LoadTest struct {
 	config   *viper.Viper
 	duration time.Duration
-	log      logrus.FieldLogger
+	log      logger.Logger
 	threads  int
 	runners  []*runner
 	wg       sync.WaitGroup
 }
 
 // NewLoadTest ctor
-func NewLoadTest(log logrus.FieldLogger, config *viper.Viper) (*LoadTest, error) {
+func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
 	rand.Seed(time.Now().Unix())
 	lt := &LoadTest{
 		log:    log,

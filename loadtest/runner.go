@@ -30,15 +30,14 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/client"
-
-	"github.com/sirupsen/logrus"
+	"github.com/topfreegames/eventsgateway/logger"
 )
 
 type runner struct {
 	client             *client.Client
 	config             *viper.Viper
 	duration           time.Duration
-	log                logrus.FieldLogger
+	log                logger.Logger
 	randPropsSize      string
 	randSleepCeilingMs int
 	sentCounter        uint64
@@ -46,7 +45,7 @@ type runner struct {
 }
 
 func newRunner(
-	log logrus.FieldLogger, config *viper.Viper,
+	log logger.Logger, config *viper.Viper,
 ) (*runner, error) {
 	rand.Seed(time.Now().Unix())
 	r := &runner{
