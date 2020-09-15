@@ -15,8 +15,10 @@ import (
 	"time"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/logger"
+	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
 )
@@ -31,9 +33,21 @@ type Client struct {
 	serverAddress string
 }
 
-// NewClient ctor
+// NewClient ctor (DEPRECATED, use New() instead)
 // configPrefix is whatever comes before `client` subpart of config
 func NewClient(
+	configPrefix string,
+	config *viper.Viper,
+	logger logrus.FieldLogger,
+	client pb.GRPCForwarderClient,
+	opts ...grpc.DialOption,
+) (*Client, error) {
+	return New(configPrefix, config, logruswrapper.NewWithLogger(logger), client, opts...)
+}
+
+// New ctor
+// configPrefix is whatever comes before `client` subpart of config
+func New(
 	configPrefix string,
 	config *viper.Viper,
 	logger logger.Logger,

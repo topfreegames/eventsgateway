@@ -51,7 +51,7 @@ func NewProducer(
 }
 
 func (p *Producer) configure() error {
-	c, err := client.NewClient("", p.config, p.log, nil)
+	c, err := client.New("", p.config, p.log, nil)
 	if err != nil {
 		return err
 	}

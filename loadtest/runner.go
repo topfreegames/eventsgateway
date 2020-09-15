@@ -58,7 +58,7 @@ func newRunner(
 
 func (r *runner) configure() error {
 	r.config.Set("client.kafkatopic", randomTopic())
-	c, err := client.NewClient("", r.config, r.log, nil)
+	c, err := client.New("", r.config, r.log, nil)
 	if err != nil {
 		return err
 	}

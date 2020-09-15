@@ -34,7 +34,7 @@ var _ = Describe("Client Whitebox", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		mockGRPCClient := mockpb.NewMockGRPCForwarderClient(mockCtrl)
 		config.Set("client.async", true)
-		c, err = NewClient(
+		c, err = New(
 			"",
 			config,
 			logruswrapper.NewWithLogger(logger),
