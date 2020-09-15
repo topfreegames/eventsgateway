@@ -15,6 +15,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
 	. "github.com/topfreegames/eventsgateway/testing"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
@@ -33,10 +34,10 @@ var _ = Describe("Client Whitebox", func() {
 		mockCtrl := gomock.NewController(GinkgoT())
 		mockGRPCClient := mockpb.NewMockGRPCForwarderClient(mockCtrl)
 		config.Set("client.async", true)
-		c, err = NewClient(
+		c, err = New(
 			"",
 			config,
-			logger,
+			logruswrapper.NewWithLogger(logger),
 			mockGRPCClient,
 		)
 		Expect(err).NotTo(HaveOccurred())

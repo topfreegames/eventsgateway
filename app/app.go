@@ -32,6 +32,7 @@ import (
 	"time"
 
 	goMetrics "github.com/rcrowley/go-metrics"
+	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
 	"github.com/topfreegames/extensions/jaeger"
@@ -46,8 +47,6 @@ import (
 	"github.com/spf13/viper"
 	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
-
-	"github.com/sirupsen/logrus"
 )
 
 // App is the app structure
@@ -56,12 +55,12 @@ type App struct {
 	config     *viper.Viper
 	grpcServer *grpc.Server
 	host       string
-	log        logrus.FieldLogger
+	log        logger.Logger
 	port       int
 }
 
 // NewApp creates a new App object
-func NewApp(host string, port int, log logrus.FieldLogger, config *viper.Viper) (*App, error) {
+func NewApp(host string, port int, log logger.Logger, config *viper.Viper) (*App, error) {
 	a := &App{
 		host:   host,
 		port:   port,

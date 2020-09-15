@@ -24,8 +24,8 @@ var _ = Describe("Client", func() {
 
 	BeforeEach(func() {
 		nowMs = time.Now().UnixNano() / 1000000
-		sender := sender.NewKafkaSender(mockForwarder, logger, config)
-		s = app.NewServer(sender, logger)
+		sender := sender.NewKafkaSender(mockForwarder, log, config)
+		s = app.NewServer(sender, log)
 		Expect(s).NotTo(BeNil())
 	})
 

@@ -29,6 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/topfreegames/eventsgateway/app"
+	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
 )
 
 var host string
@@ -47,7 +48,7 @@ var startCmd = &cobra.Command{
 		if json {
 			log.Formatter = new(logrus.JSONFormatter)
 		}
-		a, err := app.NewApp(host, port, log, config)
+		a, err := app.NewApp(host, port, logruswrapper.NewWithLogger(log), config)
 		if err != nil {
 			log.Panic(err)
 		}

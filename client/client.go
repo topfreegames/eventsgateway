@@ -17,6 +17,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/logger"
+	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
 )
@@ -25,18 +27,30 @@ import (
 type Client struct {
 	client        GRPCClient
 	config        *viper.Viper
-	logger        logrus.FieldLogger
+	logger        logger.Logger
 	topic         string
 	wg            sync.WaitGroup
 	serverAddress string
 }
 
-// NewClient ctor
+// NewClient ctor (DEPRECATED, use New() instead)
 // configPrefix is whatever comes before `client` subpart of config
 func NewClient(
 	configPrefix string,
 	config *viper.Viper,
 	logger logrus.FieldLogger,
+	client pb.GRPCForwarderClient,
+	opts ...grpc.DialOption,
+) (*Client, error) {
+	return New(configPrefix, config, logruswrapper.NewWithLogger(logger), client, opts...)
+}
+
+// New ctor
+// configPrefix is whatever comes before `client` subpart of config
+func New(
+	configPrefix string,
+	config *viper.Viper,
+	logger logger.Logger,
 	client pb.GRPCForwarderClient,
 	opts ...grpc.DialOption,
 ) (*Client, error) {
@@ -52,7 +66,7 @@ func NewClient(
 	if c.topic == "" {
 		return nil, fmt.Errorf("no kafka topic informed at %s", topicConf)
 	}
-	c.logger = c.logger.WithFields(logrus.Fields{
+	c.logger = c.logger.WithFields(map[string]interface{}{
 		"source": "eventsgateway/client",
 		"topic":  c.topic,
 	})
@@ -76,7 +90,7 @@ func (c *Client) newGRPCClient(
 	asyncConf := fmt.Sprintf("%sclient.async", configPrefix)
 	c.config.SetDefault(asyncConf, false)
 	async := c.config.GetBool(asyncConf)
-	c.logger = c.logger.WithFields(logrus.Fields{
+	c.logger = c.logger.WithFields(map[string]interface{}{
 		"serverAddress": c.serverAddress,
 		"async":         async,
 	})
@@ -92,7 +106,7 @@ func (c *Client) Send(
 	name string,
 	props map[string]string,
 ) error {
-	l := c.logger.WithFields(logrus.Fields{
+	l := c.logger.WithFields(map[string]interface{}{
 		"operation": "send",
 		"event":     name,
 	})
@@ -111,7 +125,7 @@ func (c *Client) SendToTopic(
 	props map[string]string,
 	topic string,
 ) error {
-	l := c.logger.WithFields(logrus.Fields{
+	l := c.logger.WithFields(map[string]interface{}{
 		"operation": "sendToTopic",
 		"event":     name,
 		"topic":     topic,

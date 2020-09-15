@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/forwarder"
+	"github.com/topfreegames/eventsgateway/logger"
 	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc/codes"
@@ -26,14 +26,14 @@ import (
 
 type KafkaSender struct {
 	config      *viper.Viper
-	logger      logrus.FieldLogger
+	logger      logger.Logger
 	producer    forwarder.Forwarder
 	topicPrefix string
 }
 
 func NewKafkaSender(
 	producer forwarder.Forwarder,
-	logger logrus.FieldLogger,
+	logger logger.Logger,
 	config *viper.Viper,
 ) *KafkaSender {
 	k := &KafkaSender{producer: producer, logger: logger, config: config}
@@ -69,7 +69,7 @@ func (k *KafkaSender) SendEvent(
 	ctx context.Context,
 	event *pb.Event,
 ) error {
-	l := k.logger.WithFields(logrus.Fields{
+	l := k.logger.WithFields(map[string]interface{}{
 		"topic": event.GetTopic(),
 		"event": event,
 	})
@@ -114,7 +114,7 @@ func (k *KafkaSender) SendEvent(
 	if err != nil {
 		return err
 	}
-	l.WithFields(logrus.Fields{
+	l.WithFields(map[string]interface{}{
 		"partition": partition,
 		"offset":    offset,
 	}).Debug("event sent to kafka")

@@ -25,19 +25,19 @@ package app
 import (
 	"context"
 
-	"github.com/sirupsen/logrus"
+	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 
 // Server struct
 type Server struct {
-	logger logrus.FieldLogger
+	logger logger.Logger
 	sender sender.Sender
 }
 
 // NewServer returns a new grpc server
-func NewServer(sender sender.Sender, logger logrus.FieldLogger) *Server {
+func NewServer(sender sender.Sender, logger logger.Logger) *Server {
 	s := &Server{
 		logger: logger,
 		sender: sender,

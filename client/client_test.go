@@ -34,21 +34,21 @@ var _ = Describe("Client", func() {
 
 	BeforeEach(func() {
 		var err error
-		c, err = client.NewClient("", config, logger, mockGRPCClient)
+		c, err = client.New("", config, log, mockGRPCClient)
 		Expect(err).NotTo(HaveOccurred())
 		now = time.Now().UnixNano() / 1000000
 	})
 
 	Describe("NewClient", func() {
 		It("should return client if no error", func() {
-			c, err := client.NewClient("", config, logger, mockGRPCClient)
+			c, err := client.New("", config, log, mockGRPCClient)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
 		})
 
 		It("should return an error if no kafka topic", func() {
 			config.Set("client.kafkatopic", "")
-			c, err := client.NewClient("", config, logger, mockGRPCClient)
+			c, err := client.New("", config, log, mockGRPCClient)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no kafka topic informed"))
 			Expect(c).To(BeNil())
@@ -56,7 +56,7 @@ var _ = Describe("Client", func() {
 
 		It("should return an error if no server address", func() {
 			config.Set("client.grpc.serveraddress", "")
-			c, err := client.NewClient("", config, logger, mockGRPCClient)
+			c, err := client.New("", config, log, mockGRPCClient)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no grpc server address informed"))
 			Expect(c).To(BeNil())
@@ -76,7 +76,7 @@ var _ = Describe("Client", func() {
 
 		BeforeEach(func() {
 			var err error
-			c, err = client.NewClient("", config, logger, mockGRPCClient)
+			c, err = client.New("", config, log, mockGRPCClient)
 			Expect(err).NotTo(HaveOccurred())
 			now = time.Now().UnixNano() / int64(time.Millisecond)
 		})

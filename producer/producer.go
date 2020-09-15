@@ -28,20 +28,19 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/client"
-
-	"github.com/sirupsen/logrus"
+	"github.com/topfreegames/eventsgateway/logger"
 )
 
 // Producer is the app strupure
 type Producer struct {
-	log    logrus.FieldLogger
+	log    logger.Logger
 	config *viper.Viper
 	client *client.Client
 }
 
 // NewProducer creates test client
 func NewProducer(
-	log logrus.FieldLogger, config *viper.Viper,
+	log logger.Logger, config *viper.Viper,
 ) (*Producer, error) {
 	p := &Producer{
 		log:    log,
@@ -52,7 +51,7 @@ func NewProducer(
 }
 
 func (p *Producer) configure() error {
-	c, err := client.NewClient("", p.config, p.log, nil)
+	c, err := client.New("", p.config, p.log, nil)
 	if err != nil {
 		return err
 	}
