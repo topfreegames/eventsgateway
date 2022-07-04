@@ -11,20 +11,18 @@ TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s
 .PHONY: load-test producer spark-notebook
 
 setup: setup-hooks
-	@go get -u github.com/golang/dep/cmd/dep
-	@go get -u github.com/wadey/gocovmerge
-	@go get github.com/onsi/ginkgo/ginkgo
-	@dep ensure
+	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
+	@go install github.com/onsi/ginkgo/ginkgo@v1.4.0
+	@go mod tidy
 
 setup-hooks:
 	@cd .git/hooks && ln -sf ./hooks/pre-commit.sh pre-commit
 
 setup-ci:
-	@go get github.com/mattn/goveralls
-	@go get -u github.com/golang/dep/cmd/dep
-	@go get github.com/onsi/ginkgo/ginkgo
-	@go get -u github.com/wadey/gocovmerge
-	@dep ensure
+	@go install github.com/mattn/goveralls@v0.0.11
+	@go install github.com/onsi/ginkgo/ginkgo@v1.4.0
+	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
+	@go mod tidy
 
 build:
 	@mkdir -p bin && go build -o ./bin/eventsgateway main.go
