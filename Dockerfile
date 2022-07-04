@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-FROM golang:1.12-alpine AS build-env
+FROM golang:1.17-alpine AS build-env
 
 MAINTAINER TFG Co <backend@tfgco.com>
 
@@ -29,14 +29,12 @@ ADD . /go/src/github.com/topfreegames/eventsgateway
 
 RUN apk add --no-cache make git g++ && \
     cd /go/src/github.com/topfreegames/eventsgateway && \
-    go get -u github.com/golang/dep/cmd/dep && \
-    dep ensure && \
     make build && \
     mv bin/eventsgateway /app/eventsgateway && \
     mv config /app/config
 
 FROM alpine:3.9
-  
+
 WORKDIR /app
 
 COPY --from=build-env /app/eventsgateway /app/eventsgateway
