@@ -24,3 +24,7 @@ bin
 spark-notebook/work/.ipynb_checkpoints
 
 Sidecarfile
+
+# IDE Folders
+.idea
+.vscode
