@@ -112,6 +112,15 @@ var (
 	},
 		[]string{"topic"},
 	)
+
+	APITopicsSubmission = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "eventsgateway",
+		Subsystem: "api",
+		Name:      "topics_submission_total",
+		Help:      "Topic submissions sent to kafka",
+	},
+		[]string{"topic", "success"},
+	)
 )
 
 func init() {
@@ -119,6 +128,7 @@ func init() {
 		APIResponseTime,
 		APIRequestsFailureCounter,
 		APIRequestsSuccessCounter,
+		APITopicsSubmission,
 		ClientRequestsResponseTime,
 		ClientRequestsSuccessCounter,
 		ClientRequestsFailureCounter,

@@ -26,6 +26,7 @@ import (
 	"context"
 
 	"github.com/topfreegames/eventsgateway/logger"
+	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
@@ -50,8 +51,10 @@ func (s *Server) SendEvent(
 	req *pb.Event,
 ) (*pb.SendEventResponse, error) {
 	if err := s.sender.SendEvent(ctx, req); err != nil {
+		metrics.APITopicsSubmission.WithLabelValues(req.Topic, "false").Inc()
 		return nil, err
 	}
+	metrics.APITopicsSubmission.WithLabelValues(req.Topic, "true").Inc()
 	return &pb.SendEventResponse{}, nil
 }
 
