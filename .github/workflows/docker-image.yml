@@ -3,36 +3,14 @@ on:
   release:
     types: [published]
 jobs:
-  test:
-    name: Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go
-        uses: actions/setup-go@v1
-        with:
-          go-version: '1.15'
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Restore cache
-        uses: actions/cache@v2
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Download dependencies
-        run: go mod download
-      - name: Run tests
-        run: make test
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
-          go-version: '1.15'
+          go-version: '1.17'
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Download dependencies
@@ -42,5 +20,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: tfgco/arkadiko
+          repository: topfreegames/eventsgateway
           tag_with_ref: true
