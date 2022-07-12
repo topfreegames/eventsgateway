@@ -18,6 +18,7 @@ import (
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/forwarder"
 	"github.com/topfreegames/eventsgateway/logger"
+	"github.com/topfreegames/eventsgateway/metrics"
 	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc/codes"
@@ -112,8 +113,10 @@ func (k *KafkaSender) SendEvent(
 	}
 	partition, offset, err := producer.Produce(topic, buf.Bytes())
 	if err != nil {
+		metrics.APITopicsSubmission.WithLabelValues(topic, "false").Inc()
 		return err
 	}
+	metrics.APITopicsSubmission.WithLabelValues(topic, "true").Inc()
 	l.WithFields(map[string]interface{}{
 		"partition": partition,
 		"offset":    offset,
