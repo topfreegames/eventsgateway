@@ -18,5 +18,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: topfreegames/eventsgateway
+          repository: tfgco/eventsgateway
           tag_with_ref: true
