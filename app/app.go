@@ -35,15 +35,19 @@ import (
 	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
-	"github.com/topfreegames/extensions/jaeger"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	jaegerExporter "go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/Shopify/sarama"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
 	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
@@ -72,6 +76,7 @@ func NewApp(host string, port int, log logger.Logger, config *viper.Viper) (*App
 }
 
 func (a *App) loadConfigurationDefaults() {
+	a.config.SetDefault("jaeger.url", "http://localhost:14267/api/traces")
 	a.config.SetDefault("jaeger.disabled", true)
 	a.config.SetDefault("jaeger.samplingProbability", 0.1)
 	a.config.SetDefault("jaeger.serviceName", "events-gateway")
@@ -107,13 +112,31 @@ func (a *App) configure() error {
 }
 
 func (a *App) configureJaeger() error {
-	opts := jaeger.Options{
-		Disabled:    a.config.GetBool("jaeger.disabled"),
-		Probability: a.config.GetFloat64("jaeger.samplingProbability"),
-		ServiceName: a.config.GetString("jaeger.serviceName"),
+
+	service := "eventsgateway" // a.config. // get service
+	url := a.config.GetString("jaeger.url")
+	environment := "staging"
+
+	// Create the Jaeger exporter
+
+	exp, err := jaegerExporter.New(jaegerExporter.WithCollectorEndpoint(jaegerExporter.WithEndpoint(url)))
+	if err != nil {
+		return err
 	}
-	_, err := jaeger.Configure(opts)
-	return err
+
+	tp := tracesdk.NewTracerProvider(
+		// Always be sure to batch in production.
+		tracesdk.WithBatcher(exp),
+		// Record information about this application in a Resource.
+		tracesdk.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(service),
+			attribute.String("environment", environment),
+		)),
+	)
+
+	otel.SetTracerProvider(tp)
+	return nil
 }
 
 func (a *App) configureEventsForwarder() error {
@@ -230,10 +253,12 @@ func (a *App) Run() {
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
 	var opts []grpc.ServerOption
-	tracer := opentracing.GlobalTracer()
+
+	otelOpts := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
+
 	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		a.metricsReporterInterceptor,
-		otgrpc.OpenTracingServerInterceptor(tracer),
+		otelgrpc.UnaryServerInterceptor(otelOpts),
 	)))
 	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),
