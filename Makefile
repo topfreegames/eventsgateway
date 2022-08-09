@@ -34,7 +34,7 @@ deps-start:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
 	@-docker network create eventsgateway
 	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d \
-		zookeeper kafka localstack
+		zookeeper kafka localstack jaeger
 	@echo "Dependencies started successfully."
 
 deps-stop:
