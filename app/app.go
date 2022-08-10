@@ -75,7 +75,6 @@ func NewApp(host string, port int, log logger.Logger, config *viper.Viper) (*App
 }
 
 func (a *App) loadConfigurationDefaults() {
-	a.config.SetDefault("jaeger.url", "http://localhost:14267/api/traces")
 	a.config.SetDefault("jaeger.disabled", true)
 	a.config.SetDefault("jaeger.samplingProbability", 0.1)
 	a.config.SetDefault("jaeger.serviceName", "events-gateway")
