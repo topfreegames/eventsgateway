@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
 	. "github.com/topfreegames/eventsgateway/testing"

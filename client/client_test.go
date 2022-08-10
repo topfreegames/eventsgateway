@@ -17,7 +17,7 @@ import (
 	"github.com/topfreegames/eventsgateway/client"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

@@ -9,11 +9,15 @@
 package client_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	"github.com/Shopify/sarama"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/viper"
+	wrapper "github.com/topfreegames/eventsgateway/logger"
+	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
+	"time"
 
 	"testing"
 
@@ -25,13 +29,27 @@ func TestClient(t *testing.T) {
 	RunSpecs(t, "Client Suite")
 }
 
+func expectOneMessage(messageID string, messages chan *sarama.ConsumerMessage, errors chan *sarama.ConsumerError) {
+	select {
+	case msg := <- messages:
+		Expect(string(msg.Value)).To(ContainSubstring(messageID))
+	case err := <- errors:
+		Expect(err).NotTo(HaveOccurred())
+	case <-time.NewTimer(1 * time.Second).C:
+		Fail("timed out waiting for message")
+	}
+}
+
 var (
 	config *viper.Viper
-	logger *logrus.Logger
+	logger        *logrus.Logger
+	wrappedLogger wrapper.Logger
 )
 
 var _ = BeforeEach(func() {
 	logger, _ = test.NewNullLogger()
 	logger.Level = logrus.DebugLevel
+	// logger.Out = os.Stdout // uncomment this to view logs
+	wrappedLogger = logruswrapper.NewWithLogger(logger)
 	config, _ = GetDefaultConfig()
 })

@@ -10,22 +10,22 @@ package client_test
 
 import (
 	"context"
-	"time"
-
+	"fmt"
+	"github.com/google/uuid"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/topfreegames/eventsgateway/app"
 	"github.com/topfreegames/eventsgateway/client"
-	extensions "github.com/topfreegames/extensions/kafka"
+	"github.com/topfreegames/eventsgateway/testing"
 	"google.golang.org/grpc"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Sync Client", func() {
 	var (
 		a        *app.App
 		c        *client.Client
-		consumer *extensions.Consumer
+		kafkaTopic string
+		consumer *testing.Consumer
 	)
 	name := "EventName"
 	props := map[string]string{
@@ -35,14 +35,16 @@ var _ = Describe("Sync Client", func() {
 
 	BeforeEach(func() {
 		var err error
-		consumer, err = extensions.NewConsumer(config, logger)
+		consumer, err = testing.NewConsumer(config.GetStringSlice("extensions.kafkaconsumer.brokers")[0])
 		Expect(err).NotTo(HaveOccurred())
-		go consumer.ConsumeLoop()
-		consumer.WaitUntilReady()
+
+		kafkaTopic = fmt.Sprintf("test-%s", uuid.New().String())
+		config.Set("client.kafkatopic", kafkaTopic)
 	})
 
 	AfterEach(func() {
-		consumer.Cleanup()
+		err := consumer.Clean()
+		Expect(err).NotTo(HaveOccurred())
 		if a != nil {
 			a.Stop()
 		}
@@ -50,7 +52,7 @@ var _ = Describe("Sync Client", func() {
 
 	startAppAndClient := func() {
 		var err error
-		a, err = app.NewApp("0.0.0.0", 5000, logger, config)
+		a, err = app.NewApp("0.0.0.0", 5000, wrappedLogger, config)
 		Expect(err).NotTo(HaveOccurred())
 		go a.Run()
 		config.Set("client.async", false)
@@ -67,36 +69,36 @@ var _ = Describe("Sync Client", func() {
 	Describe("Send", func() {
 		It("Should send event synchronously", func() {
 			startAppAndClient()
+
+			props["messageID"] = uuid.New().String()
 			err := c.Send(context.Background(), name, props)
 			Expect(err).NotTo(HaveOccurred())
 			err = c.GracefulStop()
 			Expect(err).NotTo(HaveOccurred())
-			<-*consumer.MessagesChannel()
+
+			msgs, errs := consumer.Consume(fmt.Sprintf("sv-uploads-%s", kafkaTopic))
+			expectOneMessage(props["messageID"], msgs, errs)
 		})
 
 		It("Should send multiple events synchronously", func() {
 			startAppAndClient()
+			const msgAmount = 3
 			var err error
-			err = c.Send(context.Background(), name, props)
-			Expect(err).NotTo(HaveOccurred())
-			err = c.Send(context.Background(), name, props)
-			Expect(err).NotTo(HaveOccurred())
-			err = c.Send(context.Background(), name, props)
-			Expect(err).NotTo(HaveOccurred())
-			err = c.GracefulStop()
-			Expect(err).NotTo(HaveOccurred())
-			expectMsg := func() {
-				select {
-				case msg := <-*consumer.MessagesChannel():
-					Expect(string(msg)).To(ContainSubstring(name))
-					// assert on the message?
-				case <-time.NewTimer(1 * time.Second).C:
-					Fail("timed out waiting for message")
-				}
+			var msgIDs []string
+
+			for i := 0; i < msgAmount; i++ {
+				msgID := uuid.NewString()
+				msgIDs = append(msgIDs, msgID)
+
+				props["messageID"] = msgID
+				err = c.Send(context.Background(), name, props)
+				Expect(err).NotTo(HaveOccurred())
 			}
-			expectMsg()
-			expectMsg()
-			expectMsg()
+
+			msgs, errs := consumer.Consume(fmt.Sprintf("sv-uploads-%s", kafkaTopic))
+			for _, msgID := range msgIDs {
+				expectOneMessage(msgID, msgs, errs)
+			}
 		})
 	})
 })

@@ -10,15 +10,16 @@ package client_test
 
 import (
 	"context"
-	"time"
-
+	"fmt"
+	"github.com/google/uuid"
 	"github.com/topfreegames/eventsgateway/app"
 	"github.com/topfreegames/eventsgateway/client"
 	"github.com/topfreegames/eventsgateway/mocks"
-	extensions "github.com/topfreegames/extensions/kafka"
+	"github.com/topfreegames/eventsgateway/testing"
 	"google.golang.org/grpc"
+	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -26,6 +27,7 @@ var _ = Describe("Async Client", func() {
 	var (
 		a *app.App
 		c *client.Client
+		kafkaTopic string
 		s *mocks.MockSender
 	)
 	name := "EventName"
@@ -42,27 +44,26 @@ var _ = Describe("Async Client", func() {
 
 	Describe("Not mocking producer", func() {
 		var (
-			consumer *extensions.Consumer
+			consumer *testing.Consumer
 		)
 
 		BeforeEach(func() {
 			var err error
-			consumer, err = extensions.NewConsumer(config, logger)
+			consumer, err = testing.NewConsumer(config.GetStringSlice("extensions.kafkaconsumer.brokers")[0])
 			Expect(err).NotTo(HaveOccurred())
-			go func() {
-				err := consumer.ConsumeLoop()
-				Expect(err).NotTo(HaveOccurred())
-			}()
-			consumer.WaitUntilReady()
+
+			kafkaTopic = fmt.Sprintf("test-%s", uuid.New().String())
+			config.Set("client.kafkatopic", kafkaTopic)
 		})
 
 		AfterEach(func() {
-			consumer.Cleanup()
+			err := consumer.Clean()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		startAppAndClient := func() {
 			var err error
-			a, err = app.NewApp("0.0.0.0", 5000, logger, config)
+			a, err = app.NewApp("0.0.0.0", 5000, wrappedLogger, config)
 			Expect(err).NotTo(HaveOccurred())
 			go a.Run()
 			config.Set("client.async", true)
@@ -79,17 +80,14 @@ var _ = Describe("Async Client", func() {
 		Describe("Send", func() {
 			It("Should send event asynchronously", func() {
 				startAppAndClient()
+				props["messageID"] = uuid.New().String()
 				err := c.Send(context.Background(), name, props)
 				Expect(err).NotTo(HaveOccurred())
 				err = c.GracefulStop()
 				Expect(err).NotTo(HaveOccurred())
-				select {
-				case msg := <-*consumer.MessagesChannel():
-					Expect(string(msg)).To(ContainSubstring(name))
-					// assert on the message?
-				case <-time.NewTimer(1 * time.Second).C:
-					Fail("timed out waiting for message")
-				}
+
+				msgs, errs := consumer.Consume(fmt.Sprintf("sv-uploads-%s", kafkaTopic))
+				expectOneMessage(props["messageID"], msgs, errs)
 			})
 		})
 	})
@@ -97,10 +95,10 @@ var _ = Describe("Async Client", func() {
 	Describe("Mocking producer", func() {
 		startAppAndClient := func() {
 			var err error
-			a, err = app.NewApp("0.0.0.0", 5000, logger, config)
+			a, err = app.NewApp("0.0.0.0", 5000, wrappedLogger, config)
 			Expect(err).NotTo(HaveOccurred())
 			s = mocks.NewMockSender()
-			server := app.NewServer(s, logger)
+			server := app.NewServer(s, wrappedLogger)
 			a.Server = server
 			go a.Run()
 			config.Set("client.async", true)
