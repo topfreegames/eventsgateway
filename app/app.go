@@ -35,10 +35,9 @@ import (
 	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
-	"github.com/uber/jaeger-client-go/config"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	jaegerExporter "go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -50,6 +49,10 @@ import (
 	"github.com/spf13/viper"
 	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
+)
+
+const (
+	OTLServiceName = "events-gateway"
 )
 
 // App is the app structure
@@ -100,7 +103,7 @@ func (a *App) loadConfigurationDefaults() {
 
 func (a *App) configure() error {
 	a.loadConfigurationDefaults()
-	if err := a.configureJaeger(); err != nil {
+	if err := a.configureOTEL(context.Background()); err != nil {
 		return err
 	}
 	err := a.configureEventsForwarder()
@@ -110,37 +113,28 @@ func (a *App) configure() error {
 	return nil
 }
 
-func (a *App) configureJaeger() error {
-	var TraceServiceName = a.config.GetString("jaeger.serviceName")
-	cfg, err := config.FromEnv()
+func (a *App) configureOTEL(ctx context.Context) error {
+
+	traceExporter, err := otlptracegrpc.New(context.Background(),
+		otlptracegrpc.WithInsecure())
 
 	if err != nil {
-		a.log.Error("Could not get Jaeger's Client configuration from environment. Disabling it.", err)
-		return err
-	}
-	// Create the Jaeger exporter
-
-	exp, err := jaegerExporter.New(jaegerExporter.WithAgentEndpoint())
-	if err != nil {
+		a.log.Error("Unable to create a OTL exporter", err)
 		return err
 	}
 
-	_, err = cfg.InitGlobalTracer(TraceServiceName)
-	if err != nil {
-		a.log.Error("Could not init Jeager Global Tracer", err)
-		return err
-	}
-
-	tp := tracesdk.NewTracerProvider(
-		// Always be sure to batch in production.
-		tracesdk.WithBatcher(exp),
-		// Record information about this application in a Resource.
-		tracesdk.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(TraceServiceName),
-		)),
+	traceResources := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(OTLServiceName),
 	)
-	otel.SetTracerProvider(tp)
+
+	traceProvider := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(traceExporter),
+		tracesdk.WithResource(traceResources),
+	)
+
+	otel.SetTracerProvider(traceProvider)
+
 	return nil
 }
 
