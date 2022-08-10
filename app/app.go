@@ -35,14 +35,13 @@ import (
 	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
+	"github.com/uber/jaeger-client-go/config"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	jaegerExporter "go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
@@ -112,15 +111,23 @@ func (a *App) configure() error {
 }
 
 func (a *App) configureJaeger() error {
+	var TraceServiceName = a.config.GetString("jaeger.serviceName")
+	cfg, err := config.FromEnv()
 
-	service := "eventsgateway" // a.config. // get service
-	url := a.config.GetString("jaeger.url")
-	environment := "staging"
-
+	if err != nil {
+		a.log.Error("Could not get Jaeger's Client configuration from environment. Disabling it.", err)
+		return err
+	}
 	// Create the Jaeger exporter
 
-	exp, err := jaegerExporter.New(jaegerExporter.WithCollectorEndpoint(jaegerExporter.WithEndpoint(url)))
+	exp, err := jaegerExporter.New(jaegerExporter.WithAgentEndpoint())
 	if err != nil {
+		return err
+	}
+
+	_, err = cfg.InitGlobalTracer(TraceServiceName)
+	if err != nil {
+		a.log.Error("Could not init Jeager Global Tracer", err)
 		return err
 	}
 
@@ -130,11 +137,9 @@ func (a *App) configureJaeger() error {
 		// Record information about this application in a Resource.
 		tracesdk.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(service),
-			attribute.String("environment", environment),
+			semconv.ServiceNameKey.String(TraceServiceName),
 		)),
 	)
-
 	otel.SetTracerProvider(tp)
 	return nil
 }
