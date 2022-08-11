@@ -35,18 +35,24 @@ import (
 	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
-	"github.com/topfreegames/extensions/jaeger"
-
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/Shopify/sarama"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
 	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
+)
+
+const (
+	OTLServiceName = "events-gateway"
 )
 
 // App is the app structure
@@ -96,7 +102,7 @@ func (a *App) loadConfigurationDefaults() {
 
 func (a *App) configure() error {
 	a.loadConfigurationDefaults()
-	if err := a.configureJaeger(); err != nil {
+	if err := a.configureOTel(); err != nil {
 		return err
 	}
 	err := a.configureEventsForwarder()
@@ -106,14 +112,28 @@ func (a *App) configure() error {
 	return nil
 }
 
-func (a *App) configureJaeger() error {
-	opts := jaeger.Options{
-		Disabled:    a.config.GetBool("jaeger.disabled"),
-		Probability: a.config.GetFloat64("jaeger.samplingProbability"),
-		ServiceName: a.config.GetString("jaeger.serviceName"),
+func (a *App) configureOTel() error {
+
+	traceExporter, err := otlptracegrpc.New(context.Background())
+
+	if err != nil {
+		a.log.Error("Unable to create a OTL exporter", err)
+		return err
 	}
-	_, err := jaeger.Configure(opts)
-	return err
+
+	traceResources := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(OTLServiceName),
+	)
+
+	traceProvider := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(traceExporter),
+		tracesdk.WithResource(traceResources),
+	)
+
+	otel.SetTracerProvider(traceProvider)
+
+	return nil
 }
 
 func (a *App) configureEventsForwarder() error {
@@ -230,10 +250,12 @@ func (a *App) Run() {
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
 	var opts []grpc.ServerOption
-	tracer := opentracing.GlobalTracer()
+
+	otelOpts := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
+
 	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		a.metricsReporterInterceptor,
-		otgrpc.OpenTracingServerInterceptor(tracer),
+		otelgrpc.UnaryServerInterceptor(otelOpts),
 	)))
 	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),

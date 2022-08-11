@@ -34,7 +34,7 @@ deps-start:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
 	@-docker network create eventsgateway
 	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d \
-		zookeeper kafka localstack
+		zookeeper kafka localstack jaeger
 	@echo "Dependencies started successfully."
 
 deps-stop:
@@ -53,7 +53,9 @@ cross-build-linux-amd64:
 
 run:
 	@echo "Will connect to kafka at ${MY_IP}:9192"
-	@env EVENTSGATEWAY_EXTENSIONS_KAFKAPRODUCER_BROKERS=${MY_IP}:9192 go run main.go start -d
+	@echo "OTLP exporter endpoint at http://${MY_IP}:4317"
+	@env EVENTSGATEWAY_EXTENSIONS_KAFKAPRODUCER_BROKERS=${MY_IP}:9192 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 go run main.go start -d
+	
 
 producer:
 	@echo "Will connect to server at ${MY_IP}:5000"
