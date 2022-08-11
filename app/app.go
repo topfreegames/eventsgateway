@@ -102,7 +102,7 @@ func (a *App) loadConfigurationDefaults() {
 
 func (a *App) configure() error {
 	a.loadConfigurationDefaults()
-	if err := a.configureOTEL(context.Background()); err != nil {
+	if err := a.configureOTel(); err != nil {
 		return err
 	}
 	err := a.configureEventsForwarder()
@@ -112,7 +112,7 @@ func (a *App) configure() error {
 	return nil
 }
 
-func (a *App) configureOTEL(ctx context.Context) error {
+func (a *App) configureOTel() error {
 
 	traceExporter, err := otlptracegrpc.New(context.Background())
 
