@@ -10,36 +10,28 @@ package sender
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
-	"github.com/spf13/viper"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/forwarder"
 	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
-	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type KafkaSender struct {
-	config      *viper.Viper
 	logger      logger.Logger
 	producer    forwarder.Forwarder
-	topicPrefix string
 }
 
 func NewKafkaSender(
 	producer forwarder.Forwarder,
 	logger logger.Logger,
-	config *viper.Viper,
 ) *KafkaSender {
-	k := &KafkaSender{producer: producer, logger: logger, config: config}
-	k.config.SetDefault("extensions.kafkaproducer.topicPrefix", "sv-uploads-")
-	k.topicPrefix = k.config.GetString("extensions.kafkaproducer.topicPrefix")
+	k := &KafkaSender{producer: producer, logger: logger}
 	return k
 }
 
@@ -105,13 +97,8 @@ func (k *KafkaSender) SendEvent(
 		return err
 	}
 
-	topic := fmt.Sprintf("%s%s", k.topicPrefix, event.GetTopic())
-
-	producer := k.producer
-	if sp, ok := k.producer.(*kafka.SyncProducer); ok {
-		producer = sp.WithContext(ctx)
-	}
-	partition, offset, err := producer.Produce(topic, buf.Bytes())
+	topic := event.GetTopic()
+	partition, offset, err := k.producer.Produce(topic, buf.Bytes())
 	if err != nil {
 		metrics.APITopicsSubmission.WithLabelValues(topic, "false").Inc()
 		return err

@@ -35,7 +35,7 @@ var _ = Describe("Sync Client", func() {
 
 	BeforeEach(func() {
 		var err error
-		consumer, err = testing.NewConsumer(config.GetStringSlice("extensions.kafkaconsumer.brokers")[0])
+		consumer, err = testing.NewConsumer(config.GetStringSlice("kafka.producer.brokers")[0])
 		Expect(err).NotTo(HaveOccurred())
 
 		kafkaTopic = fmt.Sprintf("test-%s", uuid.New().String())

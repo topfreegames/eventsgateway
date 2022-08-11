@@ -25,10 +25,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/topfreegames/eventsgateway/forwarder"
 	"net"
-	"os"
-	"strings"
 	"time"
 
 	goMetrics "github.com/rcrowley/go-metrics"
@@ -44,10 +42,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/Shopify/sarama"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/spf13/viper"
-	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 
@@ -81,18 +77,19 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("jaeger.disabled", true)
 	a.config.SetDefault("jaeger.samplingProbability", 0.1)
 	a.config.SetDefault("jaeger.serviceName", "events-gateway")
-	a.config.SetDefault("extensions.kafkaproducer.net.maxOpenRequests", 10)
-	a.config.SetDefault("extensions.kafkaproducer.net.dialTimeout", "500ms")
-	a.config.SetDefault("extensions.kafkaproducer.net.readTimeout", "250ms")
-	a.config.SetDefault("extensions.kafkaproducer.net.writeTimeout", "250ms")
-	a.config.SetDefault("extensions.kafkaproducer.net.keepAlive", "60s")
-	a.config.SetDefault("extensions.kafkaproducer.brokers", "localhost:9192")
-	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 1000000)
-	a.config.SetDefault("extensions.kafkaproducer.timeout", "250ms")
-	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1000000)
-	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 1)
-	a.config.SetDefault("extensions.kafkaproducer.retry.max", 0)
-	a.config.SetDefault("extensions.kafkaproducer.clientId", "eventsgateway")
+	a.config.SetDefault("kafka.producer.net.maxOpenRequests", 10)
+	a.config.SetDefault("kafka.producer.net.dialTimeout", "500ms")
+	a.config.SetDefault("kafka.producer.net.readTimeout", "250ms")
+	a.config.SetDefault("kafka.producer.net.writeTimeout", "250ms")
+	a.config.SetDefault("kafka.producer.net.keepAlive", "60s")
+	a.config.SetDefault("kafka.producer.brokers", "localhost:9192")
+	a.config.SetDefault("kafka.producer.maxMessageBytes", 1000000)
+	a.config.SetDefault("kafka.producer.timeout", "250ms")
+	a.config.SetDefault("kafka.producer.batch.size", 1000000)
+	a.config.SetDefault("kafka.producer.linger.ms", 1)
+	a.config.SetDefault("kafka.producer.retry.max", 0)
+	a.config.SetDefault("kafka.producer.clientId", "eventsgateway")
+	a.config.SetDefault("kafka.producer.topicPrefix", "sv-uploads-")
 	a.config.SetDefault("server.maxConnectionIdle", "20s")
 	a.config.SetDefault("server.maxConnectionAge", "20s")
 	a.config.SetDefault("server.maxConnectionAgeGrace", "5s")
@@ -138,33 +135,12 @@ func (a *App) configureOTel() error {
 
 func (a *App) configureEventsForwarder() error {
 	goMetrics.UseNilMetrics = true
-	if a.config.GetBool("extensions.sarama.logger.enabled") {
-		sarama.Logger = log.New(os.Stdout, "sarama", log.Llongfile)
-	}
-	kafkaConf := sarama.NewConfig()
-	kafkaConf.Net.MaxOpenRequests = a.config.GetInt("extensions.kafkaproducer.net.maxOpenRequests")
-	kafkaConf.Net.DialTimeout = a.config.GetDuration("extensions.kafkaproducer.net.dialTimeout")
-	kafkaConf.Net.ReadTimeout = a.config.GetDuration("extensions.kafkaproducer.net.readTimeout")
-	kafkaConf.Net.WriteTimeout = a.config.GetDuration("extensions.kafkaproducer.net.writeTimeout")
-	kafkaConf.Net.KeepAlive = a.config.GetDuration("extensions.kafkaproducer.net.keepAlive")
-	kafkaConf.Producer.Return.Errors = true
-	kafkaConf.Producer.Return.Successes = true
-	kafkaConf.Producer.MaxMessageBytes = a.config.GetInt("extensions.kafkaproducer.maxMessageBytes")
-	kafkaConf.Producer.Timeout = a.config.GetDuration("extensions.kafkaproducer.timeout")
-	kafkaConf.Producer.Flush.Bytes = a.config.GetInt("extensions.kafkaproducer.batch.size")
-	kafkaConf.Producer.Flush.Frequency = time.Duration(a.config.GetInt("extensions.kafkaproducer.linger.ms")) * time.Millisecond
-	kafkaConf.Producer.Retry.Max = a.config.GetInt("extensions.kafkaproducer.retry.max")
-	kafkaConf.Producer.RequiredAcks = sarama.WaitForLocal
-	kafkaConf.Producer.Compression = sarama.CompressionSnappy
-	kafkaConf.ClientID = a.config.GetString("extensions.kafkaproducer.clientId")
-	kafkaConf.Version = sarama.V2_1_0_0
-	brokers := strings.Split(a.config.GetString("extensions.kafkaproducer.brokers"), ",")
-	k, err := kafka.NewSyncProducer(brokers, kafkaConf)
+	k, err := forwarder.NewKafkaForwarder(a.config)
 	if err != nil {
 		return err
 	}
-	sender := sender.NewKafkaSender(k, a.log, a.config)
-	a.Server = NewServer(sender, a.log)
+	kafkaSender := sender.NewKafkaSender(k, a.log)
+	a.Server = NewServer(kafkaSender, a.log)
 	return nil
 }
 
