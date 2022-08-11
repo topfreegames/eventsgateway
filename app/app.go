@@ -114,8 +114,7 @@ func (a *App) configure() error {
 
 func (a *App) configureOTEL(ctx context.Context) error {
 
-	traceExporter, err := otlptracegrpc.New(context.Background(),
-		otlptracegrpc.WithInsecure())
+	traceExporter, err := otlptracegrpc.New(context.Background())
 
 	if err != nil {
 		a.log.Error("Unable to create a OTL exporter", err)
