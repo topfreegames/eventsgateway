@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/app"

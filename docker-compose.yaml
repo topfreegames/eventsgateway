@@ -58,6 +58,4 @@ services:
         - eventsgateway
       
 networks:
-  eventsgateway: 
-    external:
-      name: eventsgateway
+  eventsgateway:
