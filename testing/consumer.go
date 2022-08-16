@@ -13,6 +13,7 @@ func NewConsumer(brokerAddress string) (*Consumer, error) {
 	config := sarama.NewConfig()
 	config.ClientID = "go-kafka-consumer"
 	config.Consumer.Return.Errors = true
+	config.Version = sarama.V2_2_0_0
 
 	brokers := []string{brokerAddress}
 

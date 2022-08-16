@@ -17,6 +17,7 @@ import (
 	"github.com/topfreegames/eventsgateway/app"
 	"github.com/topfreegames/eventsgateway/client"
 	"github.com/topfreegames/eventsgateway/testing"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
 	"google.golang.org/grpc"
 )
 
@@ -77,7 +78,15 @@ var _ = Describe("Sync Client", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			msgs, errs := consumer.Consume(fmt.Sprintf("sv-uploads-%s", kafkaTopic))
-			expectOneMessage(props["messageID"], msgs, errs)
+			consumedMessage := expectOneMessage(props["messageID"], msgs, errs)
+			Expect(consumedMessage).NotTo(BeNil())
+
+			// verify otelsarama headers
+			Expect(len(consumedMessage.Headers)).To(Equal(1))
+			wrappedMessage := otelsarama.NewConsumerMessageCarrier(consumedMessage)
+
+			otelsaramaExpectedKey := "traceparent"
+			Expect(wrappedMessage.Keys()[0]).To(Equal(otelsaramaExpectedKey))
 		})
 
 		It("Should send multiple events synchronously", func() {
@@ -97,7 +106,7 @@ var _ = Describe("Sync Client", func() {
 
 			msgs, errs := consumer.Consume(fmt.Sprintf("sv-uploads-%s", kafkaTopic))
 			for _, msgID := range msgIDs {
-				expectOneMessage(msgID, msgs, errs)
+				_ = expectOneMessage(msgID, msgs, errs)
 			}
 		})
 	})

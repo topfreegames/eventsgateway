@@ -29,15 +29,17 @@ func TestClient(t *testing.T) {
 	RunSpecs(t, "Client Suite")
 }
 
-func expectOneMessage(messageID string, messages chan *sarama.ConsumerMessage, errors chan *sarama.ConsumerError) {
+func expectOneMessage(messageID string, messages chan *sarama.ConsumerMessage, errors chan *sarama.ConsumerError) *sarama.ConsumerMessage {
 	select {
 	case msg := <- messages:
 		Expect(string(msg.Value)).To(ContainSubstring(messageID))
+		return msg
 	case err := <- errors:
 		Expect(err).NotTo(HaveOccurred())
 	case <-time.NewTimer(1 * time.Second).C:
 		Fail("timed out waiting for message")
 	}
+	return nil
 }
 
 var (
