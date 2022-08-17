@@ -21,6 +21,7 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/topfreegames/avro v1.0.2
 	github.com/topfreegames/protos v1.6.1
+	go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama v0.34.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.34.0
 	go.opentelemetry.io/otel v1.9.0
 	go.opentelemetry.io/otel/sdk v1.9.0

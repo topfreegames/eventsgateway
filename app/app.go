@@ -26,6 +26,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/topfreegames/eventsgateway/forwarder"
+	"go.opentelemetry.io/otel/propagation"
 	"net"
 	"time"
 
@@ -127,8 +128,10 @@ func (a *App) configureOTel() error {
 		tracesdk.WithBatcher(traceExporter),
 		tracesdk.WithResource(traceResources),
 	)
-
 	otel.SetTracerProvider(traceProvider)
+
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+	otel.SetTextMapPropagator(propagator)
 
 	return nil
 }
@@ -227,11 +230,12 @@ func (a *App) Run() {
 
 	var opts []grpc.ServerOption
 
-	otelOpts := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
+	otelPropagator := otelgrpc.WithPropagators(otel.GetTextMapPropagator())
+	otelTracerProvider := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
 
 	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		a.metricsReporterInterceptor,
-		otelgrpc.UnaryServerInterceptor(otelOpts),
+		otelgrpc.UnaryServerInterceptor(otelTracerProvider, otelPropagator),
 	)))
 	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),

@@ -42,7 +42,7 @@ deps-stop:
 
 deps-test-start:
 	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test up -d \
-		zookeeper kafka
+		zookeeper kafka jaeger
 
 deps-test-stop:
 	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test down
@@ -105,7 +105,7 @@ integration-board:
 	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 
 integration-run:
-	@GRPC_GO_RETRY=on ${GOBIN}/ginkgo -tags integration -cover -r --randomize-all --randomize-suites \
+	@GRPC_GO_RETRY=on OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 ${GOBIN}/ginkgo -tags integration -cover -r --randomize-all --randomize-suites \
 		--skip-package=./app ${TEST_PACKAGES}
 
 int-ci: integration-board clear-coverage-profiles deps-test-ci integration-run gather-integration-profiles

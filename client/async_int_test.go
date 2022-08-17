@@ -87,7 +87,7 @@ var _ = Describe("Async Client", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				msgs, errs := consumer.Consume(fmt.Sprintf("sv-uploads-%s", kafkaTopic))
-				expectOneMessage(props["messageID"], msgs, errs)
+				_ = expectOneMessage(props["messageID"], msgs, errs)
 			})
 		})
 	})

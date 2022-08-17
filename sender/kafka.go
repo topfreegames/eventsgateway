@@ -98,7 +98,7 @@ func (k *KafkaSender) SendEvent(
 	}
 
 	topic := event.GetTopic()
-	partition, offset, err := k.producer.Produce(topic, buf.Bytes())
+	partition, offset, err := k.producer.Produce(ctx, topic, buf.Bytes())
 	if err != nil {
 		metrics.APITopicsSubmission.WithLabelValues(topic, "false").Inc()
 		return err
