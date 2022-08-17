@@ -20,7 +20,6 @@ require (
 	github.com/spf13/cobra v0.0.1
 	github.com/spf13/viper v1.3.2
 	github.com/topfreegames/avro v1.0.2
-	github.com/topfreegames/go-extensions-kafka v1.1.0
 	github.com/topfreegames/protos v1.6.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.34.0
 	go.opentelemetry.io/otel v1.9.0
@@ -65,7 +64,6 @@ require (
 	github.com/spf13/cast v1.3.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/topfreegames/go-extensions-tracing v1.0.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.9.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.9.0 // indirect
 	go.opentelemetry.io/otel/trace v1.9.0 // indirect
@@ -85,7 +83,3 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.9.0
 )
-
-replace github.com/uber-go/atomic => github.com/uber-go/atomic v1.4.0
-
-replace github.com/codahale/hdrhistogram => github.com/HdrHistogram/hdrhistogram-go v0.9.0

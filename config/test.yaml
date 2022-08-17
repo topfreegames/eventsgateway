@@ -1,16 +1,7 @@
-extensions:
-  kafkaproducer:
+kafka:
+  producer:
     brokers: localhost:9192
     maxMessageBytes: 3000000
-  kafkaconsumer:
-    brokers: localhost:9192
-    topics:
-      - sv-uploads-test-topic
-    channelSize: 100
-    group: test
-    sessionTimeout: 6000
-    offsetResetStrategy: latest
-    handleAllMessagesBeforeExiting: true
 client:
   async: false
   channelBuffer: 500
