@@ -2,11 +2,10 @@ jaeger:
   disabled: true
   samplingProbability: 0.1
   serviceName: events-gateway
-extensions:
-  sarama:
-    logger:
-      enabled: true
-  kafkaproducer:
+kafka:
+  logger:
+    enabled: true
+  producer:
     clientId: eventsgateway
     timeout: 250ms
     brokers: localhost:9192

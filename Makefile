@@ -7,12 +7,13 @@
 
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
 TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
+GOBIN="${GOPATH}/bin"
 
 .PHONY: load-test producer spark-notebook
 
 setup: setup-hooks
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
-	@go install github.com/onsi/ginkgo/ginkgo@v1.4.0
+	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
 	@go mod tidy
 
 setup-hooks:
@@ -20,7 +21,7 @@ setup-hooks:
 
 setup-ci:
 	@go install github.com/mattn/goveralls@v0.0.11
-	@go install github.com/onsi/ginkgo/ginkgo@v1.4.0
+	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
 	@go mod tidy
 
@@ -32,20 +33,19 @@ build-docker:
 
 deps-start:
 	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
-	@-docker network create eventsgateway
-	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d \
-		zookeeper kafka localstack
+	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway up -d \
+		zookeeper kafka localstack jaeger
 	@echo "Dependencies started successfully."
 
 deps-stop:
-	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway down
+	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway down
 
 deps-test-start:
-	@env MY_IP=${MY_IP} docker-compose -f ./docker-compose-test.yaml \
-		--project-name eventsgateway-test up -d
+	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test up -d \
+		zookeeper kafka jaeger
 
 deps-test-stop:
-	@docker-compose -f ./docker-compose-test.yaml down
+	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test down
 
 cross-build-linux-amd64:
 	@env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/eventsgateway-linux-amd64
@@ -53,7 +53,9 @@ cross-build-linux-amd64:
 
 run:
 	@echo "Will connect to kafka at ${MY_IP}:9192"
-	@env EVENTSGATEWAY_EXTENSIONS_KAFKAPRODUCER_BROKERS=${MY_IP}:9192 go run main.go start -d
+	@echo "OTLP exporter endpoint at http://${MY_IP}:4317"
+	@env EVENTSGATEWAY_KAFKA_PRODUCER_BROKERS=${MY_IP}:9192 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 go run main.go start -d
+
 
 producer:
 	@echo "Will connect to server at ${MY_IP}:5000"
@@ -64,16 +66,16 @@ load-test:
 	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go load-test -d
 
 spark-notebook:
-	@env MY_IP=${MY_IP} docker-compose --project-name eventsgateway up -d \
+	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway up -d \
 		spark-notebook
 
 hive-start:
 	@echo "Starting Hive stack using HOST IP of ${MY_IP}..."
-	@cd ./hive && docker-compose up
+	@cd ./hive && docker compose up
 	@echo "Hive stack started successfully."
 
 hive-stop:
-	@cd ./hive && docker-compose down
+	@cd ./hive && docker compose down
 
 unit: unit-board clear-coverage-profiles unit-run gather-unit-profiles
 
@@ -87,7 +89,7 @@ unit-board:
 	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 
 unit-run:
-	@ginkgo -tags unit -cover -r -randomizeAllSpecs -randomizeSuites -skipMeasurements ${TEST_PACKAGES}
+	@${GOBIN}/ginkgo -tags unit -cover -r --randomize-all --randomize-suites ${TEST_PACKAGES}
 
 gather-unit-profiles:
 	@mkdir -p _build
@@ -103,8 +105,8 @@ integration-board:
 	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 
 integration-run:
-	@GRPC_GO_RETRY=on ginkgo -tags integration -cover -r -randomizeAllSpecs -randomizeSuites \
-		--skipPackage=./app -skipMeasurements ${TEST_PACKAGES}
+	@GRPC_GO_RETRY=on OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 ${GOBIN}/ginkgo -tags integration -cover -r --randomize-all --randomize-suites \
+		--skip-package=./app ${TEST_PACKAGES}
 
 int-ci: integration-board clear-coverage-profiles deps-test-ci integration-run gather-integration-profiles
 
@@ -115,7 +117,7 @@ gather-integration-profiles:
 
 merge-profiles:
 	@mkdir -p _build
-	@gocovmerge _build/*.out > _build/coverage-all.out
+	@${GOBIN}/gocovmerge _build/*.out > _build/coverage-all.out
 
 test-coverage-func coverage-func: merge-profiles
 	@echo

@@ -4,6 +4,7 @@
 package mocks
 
 import (
+	"context"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -28,7 +29,7 @@ func (_m *MockForwarder) EXPECT() *_MockForwarderRecorder {
 	return _m.recorder
 }
 
-func (_m *MockForwarder) Produce(topic string, message []byte) (int32, int64, error) {
+func (_m *MockForwarder) Produce(ctx context.Context, topic string, message []byte) (int32, int64, error) {
 	ret := _m.ctrl.Call(_m, "Produce", topic, message)
 	ret0, _ := ret[0].(int32)
 	ret1, _ := ret[1].(int64)

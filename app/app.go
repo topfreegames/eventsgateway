@@ -25,28 +25,31 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/topfreegames/eventsgateway/forwarder"
+	"go.opentelemetry.io/otel/propagation"
 	"net"
-	"os"
-	"strings"
 	"time"
 
 	goMetrics "github.com/rcrowley/go-metrics"
 	"github.com/topfreegames/eventsgateway/logger"
 	"github.com/topfreegames/eventsgateway/metrics"
 	"github.com/topfreegames/eventsgateway/sender"
-	"github.com/topfreegames/extensions/jaeger"
-
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/Shopify/sarama"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
-	kafka "github.com/topfreegames/go-extensions-kafka"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
+)
+
+const (
+	OTLServiceName = "events-gateway"
 )
 
 // App is the app structure
@@ -75,18 +78,19 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("jaeger.disabled", true)
 	a.config.SetDefault("jaeger.samplingProbability", 0.1)
 	a.config.SetDefault("jaeger.serviceName", "events-gateway")
-	a.config.SetDefault("extensions.kafkaproducer.net.maxOpenRequests", 10)
-	a.config.SetDefault("extensions.kafkaproducer.net.dialTimeout", "500ms")
-	a.config.SetDefault("extensions.kafkaproducer.net.readTimeout", "250ms")
-	a.config.SetDefault("extensions.kafkaproducer.net.writeTimeout", "250ms")
-	a.config.SetDefault("extensions.kafkaproducer.net.keepAlive", "60s")
-	a.config.SetDefault("extensions.kafkaproducer.brokers", "localhost:9192")
-	a.config.SetDefault("extensions.kafkaproducer.maxMessageBytes", 1000000)
-	a.config.SetDefault("extensions.kafkaproducer.timeout", "250ms")
-	a.config.SetDefault("extensions.kafkaproducer.batch.size", 1000000)
-	a.config.SetDefault("extensions.kafkaproducer.linger.ms", 1)
-	a.config.SetDefault("extensions.kafkaproducer.retry.max", 0)
-	a.config.SetDefault("extensions.kafkaproducer.clientId", "eventsgateway")
+	a.config.SetDefault("kafka.producer.net.maxOpenRequests", 10)
+	a.config.SetDefault("kafka.producer.net.dialTimeout", "500ms")
+	a.config.SetDefault("kafka.producer.net.readTimeout", "250ms")
+	a.config.SetDefault("kafka.producer.net.writeTimeout", "250ms")
+	a.config.SetDefault("kafka.producer.net.keepAlive", "60s")
+	a.config.SetDefault("kafka.producer.brokers", "localhost:9192")
+	a.config.SetDefault("kafka.producer.maxMessageBytes", 1000000)
+	a.config.SetDefault("kafka.producer.timeout", "250ms")
+	a.config.SetDefault("kafka.producer.batch.size", 1000000)
+	a.config.SetDefault("kafka.producer.linger.ms", 1)
+	a.config.SetDefault("kafka.producer.retry.max", 0)
+	a.config.SetDefault("kafka.producer.clientId", "eventsgateway")
+	a.config.SetDefault("kafka.producer.topicPrefix", "sv-uploads-")
 	a.config.SetDefault("server.maxConnectionIdle", "20s")
 	a.config.SetDefault("server.maxConnectionAge", "20s")
 	a.config.SetDefault("server.maxConnectionAgeGrace", "5s")
@@ -96,7 +100,7 @@ func (a *App) loadConfigurationDefaults() {
 
 func (a *App) configure() error {
 	a.loadConfigurationDefaults()
-	if err := a.configureJaeger(); err != nil {
+	if err := a.configureOTel(); err != nil {
 		return err
 	}
 	err := a.configureEventsForwarder()
@@ -106,45 +110,40 @@ func (a *App) configure() error {
 	return nil
 }
 
-func (a *App) configureJaeger() error {
-	opts := jaeger.Options{
-		Disabled:    a.config.GetBool("jaeger.disabled"),
-		Probability: a.config.GetFloat64("jaeger.samplingProbability"),
-		ServiceName: a.config.GetString("jaeger.serviceName"),
+func (a *App) configureOTel() error {
+
+	traceExporter, err := otlptracegrpc.New(context.Background())
+
+	if err != nil {
+		a.log.Error("Unable to create a OTL exporter", err)
+		return err
 	}
-	_, err := jaeger.Configure(opts)
-	return err
+
+	traceResources := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(OTLServiceName),
+	)
+
+	traceProvider := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(traceExporter),
+		tracesdk.WithResource(traceResources),
+	)
+	otel.SetTracerProvider(traceProvider)
+
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+	otel.SetTextMapPropagator(propagator)
+
+	return nil
 }
 
 func (a *App) configureEventsForwarder() error {
 	goMetrics.UseNilMetrics = true
-	if a.config.GetBool("extensions.sarama.logger.enabled") {
-		sarama.Logger = log.New(os.Stdout, "sarama", log.Llongfile)
-	}
-	kafkaConf := sarama.NewConfig()
-	kafkaConf.Net.MaxOpenRequests = a.config.GetInt("extensions.kafkaproducer.net.maxOpenRequests")
-	kafkaConf.Net.DialTimeout = a.config.GetDuration("extensions.kafkaproducer.net.dialTimeout")
-	kafkaConf.Net.ReadTimeout = a.config.GetDuration("extensions.kafkaproducer.net.readTimeout")
-	kafkaConf.Net.WriteTimeout = a.config.GetDuration("extensions.kafkaproducer.net.writeTimeout")
-	kafkaConf.Net.KeepAlive = a.config.GetDuration("extensions.kafkaproducer.net.keepAlive")
-	kafkaConf.Producer.Return.Errors = true
-	kafkaConf.Producer.Return.Successes = true
-	kafkaConf.Producer.MaxMessageBytes = a.config.GetInt("extensions.kafkaproducer.maxMessageBytes")
-	kafkaConf.Producer.Timeout = a.config.GetDuration("extensions.kafkaproducer.timeout")
-	kafkaConf.Producer.Flush.Bytes = a.config.GetInt("extensions.kafkaproducer.batch.size")
-	kafkaConf.Producer.Flush.Frequency = time.Duration(a.config.GetInt("extensions.kafkaproducer.linger.ms")) * time.Millisecond
-	kafkaConf.Producer.Retry.Max = a.config.GetInt("extensions.kafkaproducer.retry.max")
-	kafkaConf.Producer.RequiredAcks = sarama.WaitForLocal
-	kafkaConf.Producer.Compression = sarama.CompressionSnappy
-	kafkaConf.ClientID = a.config.GetString("extensions.kafkaproducer.clientId")
-	kafkaConf.Version = sarama.V2_1_0_0
-	brokers := strings.Split(a.config.GetString("extensions.kafkaproducer.brokers"), ",")
-	k, err := kafka.NewSyncProducer(brokers, kafkaConf)
+	k, err := forwarder.NewKafkaForwarder(a.config)
 	if err != nil {
 		return err
 	}
-	sender := sender.NewKafkaSender(k, a.log, a.config)
-	a.Server = NewServer(sender, a.log)
+	kafkaSender := sender.NewKafkaSender(k, a.log)
+	a.Server = NewServer(kafkaSender, a.log)
 	return nil
 }
 
@@ -230,10 +229,13 @@ func (a *App) Run() {
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
 	var opts []grpc.ServerOption
-	tracer := opentracing.GlobalTracer()
+
+	otelPropagator := otelgrpc.WithPropagators(otel.GetTextMapPropagator())
+	otelTracerProvider := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
+
 	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		a.metricsReporterInterceptor,
-		otgrpc.OpenTracingServerInterceptor(tracer),
+		otelgrpc.UnaryServerInterceptor(otelTracerProvider, otelPropagator),
 	)))
 	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),

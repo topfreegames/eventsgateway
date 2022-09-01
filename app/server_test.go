@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/app"
@@ -24,7 +24,7 @@ var _ = Describe("Client", func() {
 
 	BeforeEach(func() {
 		nowMs = time.Now().UnixNano() / 1000000
-		sender := sender.NewKafkaSender(mockForwarder, log, config)
+		sender := sender.NewKafkaSender(mockForwarder, log)
 		s = app.NewServer(sender, log)
 		Expect(s).NotTo(BeNil())
 	})
@@ -93,7 +93,7 @@ var _ = Describe("Client", func() {
 			e := &pb.Event{
 				Id:        "someid",
 				Name:      "someName",
-				Topic:     "sometopic",
+				Topic:     "sv-uploads-sometopic",
 				Props:     map[string]string{},
 				Timestamp: nowMs,
 			}
@@ -119,7 +119,7 @@ var _ = Describe("Client", func() {
 			e := &pb.Event{
 				Id:    "someid",
 				Name:  "someName",
-				Topic: "sometopic",
+				Topic: "sv-uploads-sometopic",
 				Props: map[string]string{
 					"test1": "lalala",
 					"test2": "bla",
