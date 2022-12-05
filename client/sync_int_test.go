@@ -41,6 +41,8 @@ var _ = Describe("Sync Client", func() {
 
 		kafkaTopic = fmt.Sprintf("test-%s", uuid.New().String())
 		config.Set("client.kafkatopic", kafkaTopic)
+
+		config.Set("otlp.enabled", true)
 	})
 
 	AfterEach(func() {
@@ -49,6 +51,8 @@ var _ = Describe("Sync Client", func() {
 		if a != nil {
 			a.Stop()
 		}
+
+		config.Set("otlp.enabled", false)
 	})
 
 	startAppAndClient := func() {
