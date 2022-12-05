@@ -47,7 +47,10 @@ func (k *KafkaSender) SendEvents(
 		j := i
 		go func() {
 			if err := k.SendEvent(ctx, events[j]); err != nil {
-				k.logger.WithError(err).Error("failed to send event to kafka")
+				k.logger.
+					WithError(err).
+					WithField("topic", events[j].Topic).
+					Error("failed to send event to kafka")
 				failureIndexes = append(failureIndexes, int64(j))
 			}
 			wg.Done()
