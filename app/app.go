@@ -156,8 +156,6 @@ func (a *App) metricsReporterInterceptor(
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	l := a.log.WithField("route", info.FullMethod)
-
 	events := []*pb.Event{}
 	retry := "0"
 	switch t := req.(type) {
@@ -167,8 +165,13 @@ func (a *App) metricsReporterInterceptor(
 		events = append(events, req.(*pb.SendEventsRequest).Events...)
 		retry = fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
 	default:
-		l.Infof("Unexpected request type %T", t)
+		a.log.WithField("route", info.FullMethod).Infof("Unexpected request type %T", t)
 	}
+	
+	topic := events[0].Topic
+	l := a.log.
+		WithField("route", info.FullMethod).
+		WithField("topic", topic)
 
 	defer func(startTime time.Time) {
 		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
