@@ -75,9 +75,7 @@ func NewApp(host string, port int, log logger.Logger, config *viper.Viper) (*App
 }
 
 func (a *App) loadConfigurationDefaults() {
-	a.config.SetDefault("jaeger.disabled", true)
-	a.config.SetDefault("jaeger.samplingProbability", 0.1)
-	a.config.SetDefault("jaeger.serviceName", "events-gateway")
+	a.config.SetDefault("otlp.enabled", false)
 	a.config.SetDefault("kafka.producer.net.maxOpenRequests", 10)
 	a.config.SetDefault("kafka.producer.net.dialTimeout", "500ms")
 	a.config.SetDefault("kafka.producer.net.readTimeout", "250ms")
@@ -100,9 +98,13 @@ func (a *App) loadConfigurationDefaults() {
 
 func (a *App) configure() error {
 	a.loadConfigurationDefaults()
-	if err := a.configureOTel(); err != nil {
-		return err
+
+	if a.config.GetBool("otlp.enabled") {
+		if err := a.configureOTel(); err != nil {
+			return err
+		}
 	}
+
 	err := a.configureEventsForwarder()
 	if err != nil {
 		return err
