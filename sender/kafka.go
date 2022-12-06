@@ -105,6 +105,8 @@ func (k *KafkaSender) SendEvent(
 	topic := event.GetTopic()
 	partition, offset, err := k.producer.Produce(ctx, topic, buf.Bytes())
 	if err != nil {
+		l.WithError(err).
+			Error("error producing event to kafka")
 		metrics.APITopicsSubmission.WithLabelValues(topic, "false").Inc()
 		return err
 	}
