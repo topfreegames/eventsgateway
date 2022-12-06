@@ -31,6 +31,7 @@ func NewKafkaForwarder(config *viper.Viper) (*KafkaForwarder, error) {
 	kafkaConf.Net.KeepAlive = config.GetDuration("kafka.producer.net.keepAlive")
 	kafkaConf.Producer.Return.Errors = true
 	kafkaConf.Producer.Return.Successes = true
+	kafkaConf.Producer.Idempotent = config.GetBool("kafka.producer.idempotent")
 	kafkaConf.Producer.MaxMessageBytes = config.GetInt("kafka.producer.maxMessageBytes")
 	kafkaConf.Producer.Timeout = config.GetDuration("kafka.producer.timeout")
 	kafkaConf.Producer.Flush.Bytes = config.GetInt("kafka.producer.batch.size")

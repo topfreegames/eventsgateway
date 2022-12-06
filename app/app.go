@@ -80,6 +80,7 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("kafka.producer.net.dialTimeout", "500ms")
 	a.config.SetDefault("kafka.producer.net.readTimeout", "250ms")
 	a.config.SetDefault("kafka.producer.net.writeTimeout", "250ms")
+	a.config.SetDefault("kafka.producer.idempotent", false)
 	a.config.SetDefault("kafka.producer.net.keepAlive", "60s")
 	a.config.SetDefault("kafka.producer.brokers", "localhost:9192")
 	a.config.SetDefault("kafka.producer.maxMessageBytes", 1000000)
