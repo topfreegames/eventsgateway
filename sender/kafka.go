@@ -49,7 +49,9 @@ func (k *KafkaSender) SendEvents(
 			if err := k.SendEvent(ctx, events[j]); err != nil {
 				k.logger.
 					WithError(err).
-					WithField("topic", events[j].Topic).
+					WithField("topic", events[j].GetTopic()).
+					WithField("eventName", events[j].GetName()).
+					WithField("eventID", events[j].GetId()).
 					Error("failed to send event to kafka")
 				failureIndexes = append(failureIndexes, int64(j))
 			}
