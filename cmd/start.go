@@ -30,6 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/topfreegames/eventsgateway/app"
 	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
+	"github.com/topfreegames/eventsgateway/metrics"
 )
 
 var host string
@@ -53,6 +54,7 @@ var startCmd = &cobra.Command{
 			log.Panic(err)
 		}
 		launchPProf()
+		metrics.StartServer()
 		a.Run()
 	},
 }

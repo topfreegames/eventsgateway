@@ -123,7 +123,10 @@ var (
 	)
 )
 
-func init() {
+// StartServer runs a metrics server inside a goroutine
+// that reports default application metrics in prometheus format.
+// Any errors that may occur will stop the server add log.Fatal the error.
+func StartServer() {
 	prometheus.MustRegister(
 		APIResponseTime,
 		APIRequestsFailureCounter,
@@ -139,8 +142,8 @@ func init() {
 		port = fmt.Sprintf(":%s", envPort)
 	}
 	go func() {
-		envDisabled, _ := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_DISABLED")
-		if envDisabled == "true" {
+		envEnabled, _ := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_ENABLED")
+		if envEnabled == "false" {
 			return
 		}
 
