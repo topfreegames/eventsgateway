@@ -54,7 +54,7 @@ var startCmd = &cobra.Command{
 			log.Panic(err)
 		}
 		launchPProf()
-		metrics.StartServer()
+		launchMetricsServer()
 		a.Run()
 	},
 }
@@ -66,6 +66,12 @@ func launchPProf() {
 	if config.GetBool("pprof.enabled") {
 		professor.Launch(config.GetString("pprof.address"))
 	}
+}
+
+func launchMetricsServer() {
+	fmt.Println("Starting Metrics HTTP server")
+	config.SetDefault("prometheus.port", ":9091")
+	metrics.StartServer(config.GetString("prometheus.port"))
 }
 
 func init() {

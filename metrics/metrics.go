@@ -23,7 +23,6 @@
 package metrics
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -126,7 +125,7 @@ var (
 // StartServer runs a metrics server inside a goroutine
 // that reports default application metrics in prometheus format.
 // Any errors that may occur will stop the server add log.Fatal the error.
-func StartServer() {
+func StartServer(port string) {
 	prometheus.MustRegister(
 		APIResponseTime,
 		APIRequestsFailureCounter,
@@ -137,10 +136,6 @@ func StartServer() {
 		ClientRequestsFailureCounter,
 		ClientRequestsDroppedCounter,
 	)
-	port := ":9091"
-	if envPort, ok := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_PORT"); ok {
-		port = fmt.Sprintf(":%s", envPort)
-	}
 	go func() {
 		envEnabled, _ := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_ENABLED")
 		if envEnabled != "true" {
