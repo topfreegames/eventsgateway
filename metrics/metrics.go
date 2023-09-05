@@ -143,7 +143,7 @@ func StartServer() {
 	}
 	go func() {
 		envEnabled, _ := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_ENABLED")
-		if envEnabled == "false" {
+		if envEnabled != "true" {
 			return
 		}
 
