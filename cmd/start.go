@@ -30,6 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/topfreegames/eventsgateway/app"
 	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
+	"github.com/topfreegames/eventsgateway/metrics"
 )
 
 var host string
@@ -53,6 +54,7 @@ var startCmd = &cobra.Command{
 			log.Panic(err)
 		}
 		launchPProf()
+		launchMetricsServer()
 		a.Run()
 	},
 }
@@ -64,6 +66,12 @@ func launchPProf() {
 	if config.GetBool("pprof.enabled") {
 		professor.Launch(config.GetString("pprof.address"))
 	}
+}
+
+func launchMetricsServer() {
+	fmt.Println("Starting Metrics HTTP server")
+	config.SetDefault("prometheus.port", ":9091")
+	metrics.StartServer(config.GetString("prometheus.port"))
 }
 
 func init() {
