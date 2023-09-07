@@ -348,8 +348,6 @@ github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PK
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/topfreegames/avro v1.0.2 h1:aQ3lSbdpnxdctKvwSBgpViPEaRKlrZdtkpKQ6/UmuC8=
 github.com/topfreegames/avro v1.0.2/go.mod h1:NnT7L2CcUVRUUG8WvHSdBhnre03odkbdvnpPlAbkdm0=
-github.com/topfreegames/eventsgateway v1.0.2 h1:H3CgUSQFm7TVAMt5XHWchWdOWRdpk7nMnWiSWtH8Lqw=
-github.com/topfreegames/eventsgateway v1.0.2/go.mod h1:fnx2th5dofyDYjwd8orl5+Zm6qQQs7VfLMvyrJjHZKs=
 github.com/topfreegames/protos v1.6.1 h1:xvZCntBuj+vWs8DZewyENVGvODQJABFVwAa/avsUI6s=
 github.com/topfreegames/protos v1.6.1/go.mod h1:qHAf/WxOHNdgRC7/8DGxe4rE+7HdPuzFCuTXT/gxDWk=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
