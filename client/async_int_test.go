@@ -1,5 +1,7 @@
 // eventsgateway
+//go:build integration
 // +build integration
+
 // https://github.com/topfreegames/eventsgateway
 //
 // Licensed under the MIT license:
@@ -12,10 +14,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/topfreegames/eventsgateway/app"
-	"github.com/topfreegames/eventsgateway/client"
-	"github.com/topfreegames/eventsgateway/mocks"
-	"github.com/topfreegames/eventsgateway/testing"
+	"github.com/topfreegames/eventsgateway/v4/app"
+	"github.com/topfreegames/eventsgateway/v4/client"
+	"github.com/topfreegames/eventsgateway/v4/mocks"
+	"github.com/topfreegames/eventsgateway/v4/testing"
 	"google.golang.org/grpc"
 	"time"
 
@@ -25,10 +27,10 @@ import (
 
 var _ = Describe("Async Client", func() {
 	var (
-		a *app.App
-		c *client.Client
+		a          *app.App
+		c          *client.Client
 		kafkaTopic string
-		s *mocks.MockSender
+		s          *mocks.MockSender
 	)
 	name := "EventName"
 	props := map[string]string{
