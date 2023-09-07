@@ -25,8 +25,8 @@ package app
 import (
 	"context"
 
-	"github.com/topfreegames/eventsgateway/logger"
-	"github.com/topfreegames/eventsgateway/sender"
+	"github.com/topfreegames/eventsgateway/v4/logger"
+	"github.com/topfreegames/eventsgateway/v4/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 

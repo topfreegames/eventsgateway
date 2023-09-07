@@ -42,8 +42,8 @@ import (
   "context"
 
   "github.com/spf13/viper"
-  "github.com/topfreegames/eventsgateway"
-  "github.com/topfreegames/eventsgateway/logger"
+  "github.com/topfreegames/eventsgateway/v4"
+  "github.com/topfreegames/eventsgateway/v4/logger"
 )
 
 func ConfigureEventsGateway() (*eventsgateway.Client, error) {

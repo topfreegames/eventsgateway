@@ -23,7 +23,7 @@
 package main
 
 import (
-	"github.com/topfreegames/eventsgateway/cmd"
+	"github.com/topfreegames/eventsgateway/v4/cmd"
 )
 
 func main() {

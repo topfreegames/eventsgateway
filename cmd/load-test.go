@@ -25,8 +25,8 @@ package cmd
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/eventsgateway/loadtest"
-	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
+	"github.com/topfreegames/eventsgateway/v4/loadtest"
+	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
 )
 
 // loadTest represents the testclient command

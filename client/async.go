@@ -18,8 +18,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/logger"
-	"github.com/topfreegames/eventsgateway/metrics"
+	"github.com/topfreegames/eventsgateway/v4/logger"
+	"github.com/topfreegames/eventsgateway/v4/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
 )

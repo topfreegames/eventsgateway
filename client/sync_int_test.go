@@ -14,9 +14,9 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/topfreegames/eventsgateway/app"
-	"github.com/topfreegames/eventsgateway/client"
-	"github.com/topfreegames/eventsgateway/testing"
+	"github.com/topfreegames/eventsgateway/v4/app"
+	"github.com/topfreegames/eventsgateway/v4/client"
+	"github.com/topfreegames/eventsgateway/v4/testing"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
 	"google.golang.org/grpc"
 )
@@ -26,7 +26,7 @@ var _ = Describe("Sync Client", func() {
 		a        *app.App
 		c        *client.Client
 		kafkaTopic string
-		consumer *testing.Consumer
+		consumer   *testing.Consumer
 	)
 	name := "EventName"
 	props := map[string]string{

@@ -28,9 +28,9 @@ import (
 	"github.com/mmcloughlin/professor"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/eventsgateway/app"
-	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
-	"github.com/topfreegames/eventsgateway/metrics"
+	"github.com/topfreegames/eventsgateway/v4/app"
+	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
+	"github.com/topfreegames/eventsgateway/v4/metrics"
 )
 
 var host string

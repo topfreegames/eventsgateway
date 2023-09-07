@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/topfreegames/eventsgateway/client"
+	"github.com/topfreegames/eventsgateway/v4/client"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 
 	. "github.com/onsi/ginkgo/v2"
