@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
-	"github.com/topfreegames/eventsgateway/app"
-	"github.com/topfreegames/eventsgateway/sender"
+	"github.com/topfreegames/eventsgateway/v4/app"
+	"github.com/topfreegames/eventsgateway/v4/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 

@@ -1,4 +1,4 @@
-module github.com/topfreegames/eventsgateway
+module github.com/topfreegames/eventsgateway/v4
 
 go 1.17
 

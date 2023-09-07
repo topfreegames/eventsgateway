@@ -13,11 +13,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/logger"
+	"github.com/topfreegames/eventsgateway/v4/logger"
 
 	"testing"
 
-	. "github.com/topfreegames/eventsgateway/testing"
+	. "github.com/topfreegames/eventsgateway/v4/testing"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
 

@@ -17,8 +17,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/logger"
-	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
+	"github.com/topfreegames/eventsgateway/v4/logger"
+	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
 )

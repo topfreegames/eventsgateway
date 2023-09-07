@@ -2,7 +2,7 @@ package logrus
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/topfreegames/eventsgateway/logger"
+	"github.com/topfreegames/eventsgateway/v4/logger"
 )
 
 type logrusImpl struct {

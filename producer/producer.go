@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/client"
-	"github.com/topfreegames/eventsgateway/logger"
+	"github.com/topfreegames/eventsgateway/v4/client"
+	"github.com/topfreegames/eventsgateway/v4/logger"
 )
 
 // Producer is the app strupure

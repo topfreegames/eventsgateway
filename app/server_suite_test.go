@@ -31,9 +31,9 @@ import (
 
 	"testing"
 
-	"github.com/topfreegames/eventsgateway/logger"
-	"github.com/topfreegames/eventsgateway/mocks"
-	. "github.com/topfreegames/eventsgateway/testing"
+	"github.com/topfreegames/eventsgateway/v4/logger"
+	"github.com/topfreegames/eventsgateway/v4/mocks"
+	. "github.com/topfreegames/eventsgateway/v4/testing"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
 

@@ -15,8 +15,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
-	. "github.com/topfreegames/eventsgateway/testing"
+	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
+	. "github.com/topfreegames/eventsgateway/v4/testing"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
 

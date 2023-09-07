@@ -15,13 +15,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/viper"
-	wrapper "github.com/topfreegames/eventsgateway/logger"
-	logruswrapper "github.com/topfreegames/eventsgateway/logger/logrus"
+	wrapper "github.com/topfreegames/eventsgateway/v4/logger"
+	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
 	"time"
 
 	"testing"
 
-	. "github.com/topfreegames/eventsgateway/testing"
+	. "github.com/topfreegames/eventsgateway/v4/testing"
 )
 
 func TestClient(t *testing.T) {

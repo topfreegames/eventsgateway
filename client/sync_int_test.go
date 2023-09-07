@@ -14,9 +14,9 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/topfreegames/eventsgateway/app"
-	"github.com/topfreegames/eventsgateway/client"
-	"github.com/topfreegames/eventsgateway/testing"
+	"github.com/topfreegames/eventsgateway/v4/app"
+	"github.com/topfreegames/eventsgateway/v4/client"
+	"github.com/topfreegames/eventsgateway/v4/testing"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
 	"google.golang.org/grpc"
 )

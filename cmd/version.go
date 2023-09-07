@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/eventsgateway/misc"
+	"github.com/topfreegames/eventsgateway/v4/misc"
 )
 
 // versionCmd represents the version command

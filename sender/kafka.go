@@ -14,9 +14,9 @@ import (
 	"time"
 
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
-	"github.com/topfreegames/eventsgateway/forwarder"
-	"github.com/topfreegames/eventsgateway/logger"
-	"github.com/topfreegames/eventsgateway/metrics"
+	"github.com/topfreegames/eventsgateway/v4/forwarder"
+	"github.com/topfreegames/eventsgateway/v4/logger"
+	"github.com/topfreegames/eventsgateway/v4/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
