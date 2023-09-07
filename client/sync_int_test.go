@@ -26,7 +26,7 @@ var _ = Describe("Sync Client", func() {
 		a        *app.App
 		c        *client.Client
 		kafkaTopic string
-		consumer   *testing.Consumer
+		consumer *testing.Consumer
 	)
 	name := "EventName"
 	props := map[string]string{
