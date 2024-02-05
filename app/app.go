@@ -25,6 +25,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/topfreegames/eventsgateway/v4/forwarder"
 	"go.opentelemetry.io/otel/propagation"
 	"net"
@@ -159,20 +160,30 @@ func (a *App) metricsReporterInterceptor(
 ) (interface{}, error) {
 	events := []*pb.Event{}
 	retry := "0"
+	payloadSize := 0
 	switch t := req.(type) {
 	case *pb.Event:
-		events = append(events, req.(*pb.Event))
+		event := req.(*pb.Event)
+		events = append(events, event)
+		payloadSize = proto.Size(event)
 	case *pb.SendEventsRequest:
-		events = append(events, req.(*pb.SendEventsRequest).Events...)
-		retry = fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
+		request := req.(*pb.SendEventsRequest)
+		events = append(events, request.Events...)
+		retry = fmt.Sprintf("%d", request.Retry)
+		payloadSize = proto.Size(request)
 	default:
 		a.log.WithField("route", info.FullMethod).Infof("Unexpected request type %T", t)
 	}
-	
+
 	topic := events[0].Topic
 	l := a.log.
 		WithField("route", info.FullMethod).
 		WithField("topic", topic)
+
+	metrics.APIPayloadSize.WithLabelValues(
+		info.FullMethod,
+		topic,
+	).Observe(float64(payloadSize))
 
 	defer func(startTime time.Time) {
 		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))

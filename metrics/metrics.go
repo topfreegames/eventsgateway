@@ -42,9 +42,21 @@ var (
 			Subsystem: "api",
 			Name:      "response_time_ms",
 			Help:      "the response time in ms of api routes",
-			Buckets:   []float64{1, 5, 10, 30, 90, 160, 240},
+			Buckets:   defaultLatencyBuckets(),
 		},
 		[]string{"route", "topic", "retry"},
+	)
+
+	// APIPayloadSize summary
+	APIPayloadSize = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "api",
+			Name:      "payload_size",
+			Help:      "payload size of API routes, in bytes",
+			Buckets:   defaultPayloadSizeBuckets(),
+		},
+		[]string{"route", "topic"},
 	)
 
 	// APIRequestsSuccessCounter counter
@@ -76,7 +88,7 @@ var (
 			Subsystem: "client",
 			Name:      "response_time_ms",
 			Help:      "the response time in ms of calls to server",
-			Buckets:   []float64{1, 3, 5, 10, 25, 50, 100, 150, 200, 250, 300},
+			Buckets:   defaultLatencyBuckets(),
 		},
 		[]string{"route", "topic", "retry"},
 	)
@@ -122,12 +134,23 @@ var (
 	)
 )
 
+func defaultLatencyBuckets() []float64 {
+	// in milliseconds
+	return []float64{1, 3, 5, 10, 25, 50, 100, 200, 300, 500, 1000}
+}
+
+func defaultPayloadSizeBuckets() []float64 {
+	// in bytes
+	return []float64{100, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000}
+}
+
 // StartServer runs a metrics server inside a goroutine
 // that reports default application metrics in prometheus format.
 // Any errors that may occur will stop the server add log.Fatal the error.
 func StartServer(port string) {
 	prometheus.MustRegister(
 		APIResponseTime,
+		APIPayloadSize,
 		APIRequestsFailureCounter,
 		APIRequestsSuccessCounter,
 		APITopicsSubmission,
@@ -139,6 +162,7 @@ func StartServer(port string) {
 	go func() {
 		envEnabled, _ := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_ENABLED")
 		if envEnabled != "true" {
+			log.Warn("Prometheus web server disabled")
 			return
 		}
 

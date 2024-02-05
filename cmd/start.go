@@ -23,7 +23,7 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/mmcloughlin/professor"
 	"github.com/sirupsen/logrus"
@@ -60,7 +60,7 @@ var startCmd = &cobra.Command{
 }
 
 func launchPProf() {
-	fmt.Println("Starting PProf HTTP server")
+	log.Println("Starting PProf HTTP server")
 	config.SetDefault("pprof.enabled", true)
 	config.SetDefault("pprof.address", "localhost:6060")
 	if config.GetBool("pprof.enabled") {
@@ -69,9 +69,10 @@ func launchPProf() {
 }
 
 func launchMetricsServer() {
-	fmt.Println("Starting Metrics HTTP server")
 	config.SetDefault("prometheus.port", ":9091")
-	metrics.StartServer(config.GetString("prometheus.port"))
+	httpPort := config.GetString("prometheus.port")
+	log.Printf("Starting Metrics HTTP server at %s\n", httpPort)
+	metrics.StartServer(httpPort)
 }
 
 func init() {
