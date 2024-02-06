@@ -141,7 +141,7 @@ func defaultLatencyBuckets() []float64 {
 
 func defaultPayloadSizeBuckets() []float64 {
 	// in bytes
-	return []float64{100, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000}
+	return []float64{5000, 7500, 9000, 12000}
 }
 
 // StartServer runs a metrics server inside a goroutine
