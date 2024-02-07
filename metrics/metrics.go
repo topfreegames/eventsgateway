@@ -23,6 +23,7 @@
 package metrics
 
 import (
+	"errors"
 	"github.com/spf13/viper"
 	"net/http"
 	"time"
@@ -123,9 +124,26 @@ func defaultPayloadSizeBuckets(config *viper.Viper) []float64 {
 	return config.Get(configKey).([]float64)
 }
 
+// RegisterMetrics is a wrapper to handle prometheus.AlreadyRegisteredError;
+// it only returns an error if the metric wasn't already registered and there was an
+// actual error registering it.
+func RegisterMetrics(collectors []prometheus.Collector) error {
+	for _, collector := range collectors {
+		err := prometheus.Register(collector)
+		if err != nil {
+			var alreadyRegisteredError prometheus.AlreadyRegisteredError
+			if !errors.As(err, &alreadyRegisteredError) {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // StartServer runs a metrics server inside a goroutine
 // that reports default application metrics in prometheus format.
-// Any errors that may occur will stop the server add log.Fatal the error.
+// Any errors that may occur will stop the server and log.Fatal the error.
 func StartServer(config *viper.Viper) {
 	APIPayloadSize = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -149,13 +167,19 @@ func StartServer(config *viper.Viper) {
 		[]string{"route", "topic", "retry"},
 	)
 
-	prometheus.MustRegister(
+	collectors := []prometheus.Collector{
 		APIResponseTime,
 		APIPayloadSize,
 		APIRequestsFailureCounter,
 		APIRequestsSuccessCounter,
 		APITopicsSubmission,
-	)
+	}
+
+	err := RegisterMetrics(collectors)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	go func() {
 		envEnabled := config.GetString("prometheus.enabled")
 		if envEnabled != "true" {

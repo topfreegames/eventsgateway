@@ -96,6 +96,8 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("server.maxConnectionAgeGrace", "5s")
 	a.config.SetDefault("server.Time", "10s")
 	a.config.SetDefault("server.Timeout", "500ms")
+	a.config.SetDefault("prometheus.enabled", "true") // always true on the API side
+	a.config.SetDefault("prometheus.port", ":9091")
 }
 
 func (a *App) configure() error {
@@ -245,6 +247,7 @@ func (a *App) Run() {
 	}
 	log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
+	metrics.StartServer(a.config)
 	var opts []grpc.ServerOption
 
 	otelPropagator := otelgrpc.WithPropagators(otel.GetTextMapPropagator())
