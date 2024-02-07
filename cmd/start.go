@@ -69,10 +69,10 @@ func launchPProf() {
 }
 
 func launchMetricsServer() {
+	config.SetDefault("prometheus.enabled", "true") // always true on the API side
 	config.SetDefault("prometheus.port", ":9091")
-	httpPort := config.GetString("prometheus.port")
-	log.Printf("Starting Metrics HTTP server at %s\n", httpPort)
-	metrics.StartServer(httpPort)
+
+	metrics.StartServer(config)
 }
 
 func init() {

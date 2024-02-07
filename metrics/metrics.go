@@ -23,8 +23,8 @@
 package metrics
 
 import (
+	"github.com/spf13/viper"
 	"net/http"
-	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -35,29 +35,11 @@ import (
 )
 
 var (
-	// APIResponseTime summary
-	APIResponseTime = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "eventsgateway",
-			Subsystem: "api",
-			Name:      "response_time_ms",
-			Help:      "the response time in ms of api routes",
-			Buckets:   defaultLatencyBuckets(),
-		},
-		[]string{"route", "topic", "retry"},
-	)
+	// APIResponseTime summary, observes the API response time as perceived by the server
+	APIResponseTime *prometheus.HistogramVec
 
-	// APIPayloadSize summary
-	APIPayloadSize = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "eventsgateway",
-			Subsystem: "api",
-			Name:      "payload_size",
-			Help:      "payload size of API routes, in bytes",
-			Buckets:   defaultPayloadSizeBuckets(),
-		},
-		[]string{"route", "topic"},
-	)
+	// APIPayloadSize summary, observes the payload size of requests arriving at the server
+	APIPayloadSize *prometheus.HistogramVec
 
 	// APIRequestsSuccessCounter counter
 	APIRequestsSuccessCounter = prometheus.NewCounterVec(
@@ -81,17 +63,8 @@ var (
 		[]string{"route", "topic", "retry", "reason"},
 	)
 
-	// ClientRequestsResponseTime is the time the client take to talk to the server
-	ClientRequestsResponseTime = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "eventsgateway",
-			Subsystem: "client",
-			Name:      "response_time_ms",
-			Help:      "the response time in ms of calls to server",
-			Buckets:   defaultLatencyBuckets(),
-		},
-		[]string{"route", "topic", "retry"},
-	)
+	// ClientRequestsResponseTime summary, observes the API response time as perceived by the client
+	ClientRequestsResponseTime *prometheus.HistogramVec
 
 	// ClientRequestsSuccessCounter is the count of successfull calls to the server
 	ClientRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -134,33 +107,57 @@ var (
 	)
 )
 
-func defaultLatencyBuckets() []float64 {
+func defaultLatencyBuckets(config *viper.Viper) []float64 {
 	// in milliseconds
-	return []float64{1, 3, 5, 10, 25, 50, 100, 200, 300, 500, 1000}
+	const configKey = "prometheus.buckets.latency"
+	config.SetDefault(configKey, []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000})
+
+	return config.Get(configKey).([]float64)
 }
 
-func defaultPayloadSizeBuckets() []float64 {
+func defaultPayloadSizeBuckets(config *viper.Viper) []float64 {
 	// in bytes
-	return []float64{5000, 7500, 9000, 12000}
+	configKey := "prometheus.buckets.payloadSize"
+	config.SetDefault(configKey, []float64{100, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000})
+
+	return config.Get(configKey).([]float64)
 }
 
 // StartServer runs a metrics server inside a goroutine
 // that reports default application metrics in prometheus format.
 // Any errors that may occur will stop the server add log.Fatal the error.
-func StartServer(port string) {
+func StartServer(config *viper.Viper) {
+	APIPayloadSize = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "api",
+			Name:      "payload_size",
+			Help:      "payload size of API routes, in bytes",
+			Buckets:   defaultPayloadSizeBuckets(config),
+		},
+		[]string{"route", "topic"},
+	)
+
+	APIResponseTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "api",
+			Name:      "response_time_ms",
+			Help:      "the response time in ms of api routes",
+			Buckets:   defaultLatencyBuckets(config),
+		},
+		[]string{"route", "topic", "retry"},
+	)
+
 	prometheus.MustRegister(
 		APIResponseTime,
 		APIPayloadSize,
 		APIRequestsFailureCounter,
 		APIRequestsSuccessCounter,
 		APITopicsSubmission,
-		ClientRequestsResponseTime,
-		ClientRequestsSuccessCounter,
-		ClientRequestsFailureCounter,
-		ClientRequestsDroppedCounter,
 	)
 	go func() {
-		envEnabled, _ := os.LookupEnv("EVENTSGATEWAY_PROMETHEUS_ENABLED")
+		envEnabled := config.GetString("prometheus.enabled")
 		if envEnabled != "true" {
 			log.Warn("Prometheus web server disabled")
 			return
@@ -170,7 +167,7 @@ func StartServer(port string) {
 		r.Handle("/metrics", promhttp.Handler())
 
 		s := &http.Server{
-			Addr:           port,
+			Addr:           config.GetString("prometheus.port"),
 			ReadTimeout:    8 * time.Second,
 			WriteTimeout:   8 * time.Second,
 			MaxHeaderBytes: 1 << 20,
