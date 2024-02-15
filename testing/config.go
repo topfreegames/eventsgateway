@@ -8,9 +8,8 @@
 package testing
 
 import (
-	"strings"
-
 	"github.com/spf13/viper"
+	"strings"
 )
 
 // GetDefaultConfig returns the configuration at ./config/test.yaml
@@ -29,6 +28,8 @@ func GetDefaultConfig() (*viper.Viper, error) {
 	if err := cfg.ReadInConfig(); err != nil {
 		return nil, err
 	}
+
+	cfg.Set("prometheus.enabled", "false")
 
 	return cfg, nil
 }

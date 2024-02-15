@@ -10,6 +10,8 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/topfreegames/eventsgateway/v4/metrics"
 	"strings"
 	"sync"
 	"time"
@@ -94,10 +96,38 @@ func (c *Client) newGRPCClient(
 		"serverAddress": c.serverAddress,
 		"async":         async,
 	})
+
+	c.registerMetrics(configPrefix)
 	if async {
 		return newGRPCClientAsync(configPrefix, c.config, c.logger, c.serverAddress, client, opts...)
 	}
 	return newGRPCClientSync(configPrefix, c.config, c.logger, c.serverAddress, client, opts...)
+}
+
+func (c *Client) registerMetrics(configPrefix string) {
+	latencyBucketsConf := fmt.Sprintf("%sclient.prometheus.buckets.latency", configPrefix)
+	c.config.SetDefault(latencyBucketsConf, []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000})
+	latencyBuckets := c.config.Get(latencyBucketsConf).([]float64)
+
+	metrics.ClientRequestsResponseTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "client",
+			Name:      "response_time_ms",
+			Help:      "the response time in ms of calls to server",
+			Buckets:   latencyBuckets,
+		},
+		[]string{"route", "topic", "retry"},
+	)
+
+	collectors := []prometheus.Collector{
+		metrics.ClientRequestsResponseTime,
+		metrics.ClientRequestsSuccessCounter,
+		metrics.ClientRequestsFailureCounter,
+		metrics.ClientRequestsDroppedCounter,
+	}
+	err := metrics.RegisterMetrics(collectors)
+	c.logger.WithError(err).Error("failed to register metric")
 }
 
 // Send sends an event to another server via grpc using the client's configured topic
