@@ -127,7 +127,9 @@ func (c *Client) registerMetrics(configPrefix string) {
 		metrics.ClientRequestsDroppedCounter,
 	}
 	err := metrics.RegisterMetrics(collectors)
-	c.logger.WithError(err).Error("failed to register metric")
+        if err != nil {
+		c.logger.WithError(err).Error("failed to register metric")
+	}
 }
 
 // Send sends an event to another server via grpc using the client's configured topic
