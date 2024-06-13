@@ -59,7 +59,7 @@ cross-build-linux-amd64:
 #	@echo "OTLP exporter endpoint at http://${MY_IP}:4317"
 #	@env EVENTSGATEWAY_KAFKA_PRODUCER_BROKERS=${MY_IP}:9192 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 go run main.go start -d
 run:
-	@docker compose start eventsgateway-api
+	@docker compose --project-name eventsgateway up -d eventsgateway-api
 
 producer:
 	@echo "Will connect to server at ${MY_IP}:5000"
@@ -109,8 +109,8 @@ integration-board:
 	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 
 integration-run:
-	@GRPC_GO_RETRY=on OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 ${GOBIN}/ginkgo -tags integration -cover -r --randomize-all --randomize-suites \
-		--skip-package=./app ${TEST_PACKAGES}
+	@GRPC_GO_RETRY=on ${GOBIN}/ginkgo -tags integration -cover -r --randomize-all --randomize-suites \
+		--skip-package=./app ${TEST_PACKAGES} --verbose
 
 int-ci: integration-board clear-coverage-profiles deps-test-ci integration-run gather-integration-profiles
 
