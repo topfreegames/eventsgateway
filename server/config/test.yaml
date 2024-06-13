@@ -1,0 +1,21 @@
+kafka:
+  producer:
+    brokers: kafka:9092
+    maxMessageBytes: 3000000
+client:
+  async: false
+  channelBuffer: 500
+  lingerInterval: 1s
+  batchSize: 1
+  kafkatopic: test-topic 
+  maxRetries: 3
+  numRoutines: 1
+  retryInterval: 1s
+  grpc:
+    serveraddress: localhost:5000
+    timeoutms: 500ms
+sentry:
+  url: ""
+newrelic:
+  app: "eventsgateway"
+  key: ""

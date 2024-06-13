@@ -1,0 +1,73 @@
+package logger
+
+// NullLogger ...
+type NullLogger struct{}
+
+// Fatal ...
+func (n *NullLogger) Fatal(format ...interface{}) {}
+
+// Fatalf ...
+func (n *NullLogger) Fatalf(format string, args ...interface{}) {}
+
+// Fatalln ...
+func (n *NullLogger) Fatalln(args ...interface{}) {}
+
+// Debug ...
+func (n *NullLogger) Debug(args ...interface{}) {}
+
+// Debugf ...
+func (n *NullLogger) Debugf(format string, args ...interface{}) {}
+
+// Debugln ...
+func (n *NullLogger) Debugln(args ...interface{}) {}
+
+// Error ...
+func (n *NullLogger) Error(args ...interface{}) {}
+
+// Errorf ...
+func (n *NullLogger) Errorf(format string, args ...interface{}) {}
+
+// Errorln ...
+func (n *NullLogger) Errorln(args ...interface{}) {}
+
+// Info ...
+func (n *NullLogger) Info(args ...interface{}) {}
+
+// Infof ...
+func (n *NullLogger) Infof(format string, args ...interface{}) {}
+
+// Infoln ...
+func (n *NullLogger) Infoln(args ...interface{}) {}
+
+// Warn ...
+func (n *NullLogger) Warn(args ...interface{}) {}
+
+// Warnf ...
+func (n *NullLogger) Warnf(format string, args ...interface{}) {}
+
+// Warnln ...
+func (n *NullLogger) Warnln(args ...interface{}) {}
+
+// Panic ...
+func (n *NullLogger) Panic(args ...interface{}) {}
+
+// Panicf ...
+func (n *NullLogger) Panicf(format string, args ...interface{}) {}
+
+// Panicln ...
+func (n *NullLogger) Panicln(args ...interface{}) {}
+
+// WithFields ...
+func (n *NullLogger) WithFields(fields map[string]interface{}) Logger {
+	return n
+}
+
+// WithField ...
+func (n *NullLogger) WithField(key string, value interface{}) Logger {
+	return n
+}
+
+// WithError ...
+func (n *NullLogger) WithError(err error) Logger {
+	return n
+}
