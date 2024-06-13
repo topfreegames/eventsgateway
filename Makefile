@@ -9,36 +9,20 @@ MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | gre
 TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*|*server*" \) ! \( -path "*server*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 GOBIN="${GOPATH}/bin"
 
-
-
 # New commands -------------------------
 
 build-dev:
 	@docker build -t eventsgateway-client-dev -f dev.Dockerfile .
 
-test: deps-start
+test:
 	docker compose up client-tests
-
-deps-start:
-	@docker compose up -d \
-		zookeeper kafka jaeger eventsgateway-api
-
-deps-stop:
-	@docker compose down
+	docker compose down
 
 # Old commands --------------------------
 
 .PHONY: load-test producer spark-notebook
 
-setup-dev-img:
-	@docker build -t eventsgateway-dev -f dev.Dockerfile .
-
-setup: setup-hooks setup-dev-img
-	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
-	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
-	@go mod tidy
-
-setup-hooks:
+setup:
 	@cd .git/hooks && ln -sf ./hooks/pre-commit.sh pre-commit
 
 setup-ci:
