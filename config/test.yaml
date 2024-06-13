@@ -1,6 +1,6 @@
 kafka:
   producer:
-    brokers: localhost:9192
+    brokers: kafka:9092
     maxMessageBytes: 3000000
 client:
   async: false

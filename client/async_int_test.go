@@ -1,5 +1,7 @@
 // eventsgateway
+//go:build integration
 // +build integration
+
 // https://github.com/topfreegames/eventsgateway
 //
 // Licensed under the MIT license:
@@ -25,10 +27,10 @@ import (
 
 var _ = Describe("Async Client", func() {
 	var (
-		a *app.App
-		c *client.Client
+		a          *app.App
+		c          *client.Client
 		kafkaTopic string
-		s *mocks.MockSender
+		s          *mocks.MockSender
 	)
 	name := "EventName"
 	props := map[string]string{

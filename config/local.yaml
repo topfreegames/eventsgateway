@@ -8,7 +8,7 @@ kafka:
   producer:
     clientId: eventsgateway
     timeout: 250ms
-    brokers: localhost:9192
+    brokers: kafka:9092
     maxMessageBytes: 1000000
     linger:
       ms: 1

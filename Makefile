@@ -11,7 +11,10 @@ GOBIN="${GOPATH}/bin"
 
 .PHONY: load-test producer spark-notebook
 
-setup: setup-hooks
+setup-dev-img:
+	@docker build -t eventsgateway-dev -f dev.Dockerfile .
+
+setup: setup-hooks setup-dev-img
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
 	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
 	@go mod tidy
@@ -42,7 +45,7 @@ deps-stop:
 
 deps-test-start:
 	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test up -d \
-		zookeeper kafka jaeger
+		zookeeper kafka jaeger eventsgateway-api
 
 deps-test-stop:
 	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test down
@@ -51,11 +54,12 @@ cross-build-linux-amd64:
 	@env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/eventsgateway-linux-amd64
 	@chmod a+x ./bin/eventsgateway-linux-amd64
 
+#run:
+#	@echo "Will connect to kafka at ${MY_IP}:9192"
+#	@echo "OTLP exporter endpoint at http://${MY_IP}:4317"
+#	@env EVENTSGATEWAY_KAFKA_PRODUCER_BROKERS=${MY_IP}:9192 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 go run main.go start -d
 run:
-	@echo "Will connect to kafka at ${MY_IP}:9192"
-	@echo "OTLP exporter endpoint at http://${MY_IP}:4317"
-	@env EVENTSGATEWAY_KAFKA_PRODUCER_BROKERS=${MY_IP}:9192 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 go run main.go start -d
-
+	@docker compose start eventsgateway-api
 
 producer:
 	@echo "Will connect to server at ${MY_IP}:5000"
@@ -94,9 +98,9 @@ unit-run:
 gather-unit-profiles:
 	@mkdir -p _build
 	@echo "mode: count" > _build/coverage-unit.out
-	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
+	@sh -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
 
-int integration: integration-board clear-coverage-profiles deps-test-start integration-run gather-integration-profiles deps-test-stop
+int integration: integration-board clear-coverage-profiles integration-run gather-integration-profiles
 
 integration-board:
 	@echo
@@ -113,7 +117,7 @@ int-ci: integration-board clear-coverage-profiles deps-test-ci integration-run g
 gather-integration-profiles:
 	@mkdir -p _build
 	@echo "mode: count" > _build/coverage-integration.out
-	@bash -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-integration.out; done'
+	@sh -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-integration.out; done'
 
 merge-profiles:
 	@mkdir -p _build
@@ -126,7 +130,10 @@ test-coverage-func coverage-func: merge-profiles
 	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
 	@go tool cover -func=_build/coverage-all.out | egrep -v "100.0[%]"
 
-test: unit int test-coverage-func
+test-go: unit int test-coverage-func
+
+test: deps-test-start
+	docker exec -it eventsgateway-test-eventsgateway-api-1 make test-go
 
 test-ci: unit test-coverage-func
 
