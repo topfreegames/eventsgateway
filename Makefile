@@ -32,28 +32,14 @@ setup-ci:
 	@go mod tidy
 
 build:
-	@mkdir -p bin && go build -o ./bin/eventsgateway main.go
+	@mkdir -p bin && go build -o ./bin/eventsgateway-client main.go
 
 build-docker:
 	@docker build -t eventsgateway .
 
-deps-test-start:
-	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test up -d \
-		zookeeper kafka jaeger eventsgateway-api
-
-deps-test-stop:
-	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test down
-
 cross-build-linux-amd64:
 	@env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/eventsgateway-linux-amd64
 	@chmod a+x ./bin/eventsgateway-linux-amd64
-
-#run:
-#	@echo "Will connect to kafka at ${MY_IP}:9192"
-#	@echo "OTLP exporter endpoint at http://${MY_IP}:4317"
-#	@env EVENTSGATEWAY_KAFKA_PRODUCER_BROKERS=${MY_IP}:9192 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://${MY_IP}:4317 go run main.go start -d
-run:
-	@docker compose --project-name eventsgateway up -d eventsgateway-api
 
 producer:
 	@echo "Will connect to server at ${MY_IP}:5000"
