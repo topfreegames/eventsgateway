@@ -25,7 +25,7 @@ MAINTAINER TFG Co <backend@tfgco.com>
 
 RUN mkdir -p /app/bin
 
-ADD . /go/src/github.com/topfreegames/eventsgateway
+ADD .. /go/src/github.com/topfreegames/eventsgateway
 
 RUN apk add --no-cache make git g++ && \
     cd /go/src/github.com/topfreegames/eventsgateway && \
