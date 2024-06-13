@@ -39,6 +39,28 @@ import (
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
 
+// GetDefaultConfig returns the configuration at ./config/test.yaml
+func GetDefaultConfig() (*viper.Viper, error) {
+	cfg := viper.New()
+	cfg.SetConfigName("test")
+	cfg.SetConfigType("yaml")
+	cfg.SetEnvPrefix("eventsgateway")
+	cfg.AddConfigPath(".")
+	cfg.AddConfigPath("./config")
+	cfg.AddConfigPath("../config")
+	cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	cfg.AutomaticEnv()
+
+	// If a config file is found, read it in.
+	if err := cfg.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	cfg.Set("prometheus.enabled", "false")
+
+	return cfg, nil
+}
+
 func TestClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "App suite")
