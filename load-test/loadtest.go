@@ -20,53 +20,66 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package testing
+package load_test
 
 import (
-	"context"
+	"fmt"
+	"github.com/topfreegames/eventsgateway/v4/testing"
+	"math/rand"
+	"os"
+	"os/signal"
+	"sync"
 	"time"
 
 	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/v4/client"
 	"github.com/topfreegames/eventsgateway/v4/logger"
 )
 
-// Producer is the app strupure
-type Producer struct {
-	log    logger.Logger
-	config *viper.Viper
-	client *client.Client
+// LoadTest holds runners clients
+type LoadTest struct {
+	config   *viper.Viper
+	duration time.Duration
+	log      logger.Logger
+	threads  int
+	runners  []*testing.runner
+	wg       sync.WaitGroup
 }
 
-// NewProducer creates test client
-func NewProducer(
-	log logger.Logger, config *viper.Viper,
-) (*Producer, error) {
-	p := &Producer{
+// NewLoadTest ctor
+func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
+	rand.Seed(time.Now().Unix())
+	lt := &LoadTest{
 		log:    log,
 		config: config,
 	}
-	err := p.configure()
-	return p, err
+	lt.config.SetDefault("loadtestclient.duration", "10s")
+	lt.duration = lt.config.GetDuration("loadtestclient.duration")
+	lt.config.SetDefault("loadtestclient.threads", 2)
+	lt.threads = lt.config.GetInt("loadtestclient.threads")
+	lt.runners = make([]*testing.runner, lt.threads)
+	for i := 0; i < lt.threads; i++ {
+		runner, err := testing.newRunner(log, config)
+		if err != nil {
+			return nil, err
+		}
+		lt.runners[i] = runner
+	}
+	return lt, nil
 }
 
-func (p *Producer) configure() error {
-	c, err := client.New("", p.config, p.log, nil)
-	if err != nil {
-		return err
+// Run starts all runners
+func (lt *LoadTest) Run() {
+	lt.wg.Add(lt.threads)
+	for _, runner := range lt.runners {
+		go runner.run()
 	}
-	p.client = c
-	return nil
-}
-
-// Run runs the test client
-func (p *Producer) Run() {
-	if err := p.client.Send(context.Background(), "test-event", map[string]string{
-		"some-prop": "some value",
-	}); err != nil {
-		println(err.Error())
-		return
+	lt.wg.Wait()
+	sentCounter := uint64(0)
+	for _, runner := range lt.runners {
+		sentCounter += runner.sentCounter
 	}
-	time.Sleep(1 * time.Second)
-	println("done")
+	fmt.Printf("Sent %d events in %s\n", sentCounter, lt.duration)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
 }

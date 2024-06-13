@@ -25,8 +25,8 @@ package cmd
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/topfreegames/eventsgateway/v4/load-test"
 	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
-	"github.com/topfreegames/eventsgateway/v4/testing"
 )
 
 // loadTest represents the testclient command
@@ -42,7 +42,7 @@ var loadTest = &cobra.Command{
 		if json {
 			log.Formatter = new(logrus.JSONFormatter)
 		}
-		tc, err := testing.NewLoadTest(logruswrapper.NewWithLogger(log), config)
+		tc, err := load_test.NewLoadTest(logruswrapper.NewWithLogger(log), config)
 		if err != nil {
 			log.Panic(err)
 		}
