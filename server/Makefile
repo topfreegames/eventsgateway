@@ -8,6 +8,9 @@
 GOBIN="${GOPATH}/bin"
 TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 
+run:
+	docker compose up eventsgateway-api
+
 build:
 	@mkdir -p bin && go build -o ./bin/eventsgateway main.go
 

@@ -6,8 +6,27 @@
 # Copyright © 2018 Top Free Games <backend@tfgco.com>
 
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
-TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
+TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*|*server*" \) ! \( -path "*server*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 GOBIN="${GOPATH}/bin"
+
+
+
+# New commands -------------------------
+
+build-dev:
+	@docker build -t eventsgateway-client-dev -f dev.Dockerfile .
+
+test: deps-start
+	docker compose up client-tests
+
+deps-start:
+	@docker compose up -d \
+		zookeeper kafka jaeger eventsgateway-api
+
+deps-stop:
+	@docker compose down
+
+# Old commands --------------------------
 
 .PHONY: load-test producer spark-notebook
 
@@ -33,15 +52,6 @@ build:
 
 build-docker:
 	@docker build -t eventsgateway .
-
-deps-start:
-	@echo "Starting dependencies using HOST IP of ${MY_IP}..."
-	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway up -d \
-		zookeeper kafka localstack jaeger
-	@echo "Dependencies started successfully."
-
-deps-stop:
-	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway down
 
 deps-test-start:
 	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway-test up -d \
@@ -131,9 +141,6 @@ test-coverage-func coverage-func: merge-profiles
 	@go tool cover -func=_build/coverage-all.out | egrep -v "100.0[%]"
 
 test-go: unit int test-coverage-func
-
-test: deps-test-start
-	docker exec -it eventsgateway-test-eventsgateway-api-1 make test-go
 
 test-ci: unit test-coverage-func
 

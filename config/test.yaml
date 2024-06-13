@@ -12,7 +12,7 @@ client:
   numRoutines: 1
   retryInterval: 1s
   grpc:
-    serveraddress: localhost:5000
+    serveraddress: eventsgateway-api:5000
     timeoutms: 500ms
 sentry:
   url: ""

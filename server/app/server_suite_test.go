@@ -31,11 +31,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
 
+	"strings"
 	"testing"
 
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
 	"github.com/topfreegames/eventsgateway/v4/server/mocks"
-	. "github.com/topfreegames/eventsgateway/v4/server/testing"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
 

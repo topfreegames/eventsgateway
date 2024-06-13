@@ -66,22 +66,35 @@ services:
         - eventsgateway
 
   eventsgateway-api:
-    image: eventsgateway-dev
-    volumes:
-      - ./:/app
-    working_dir: /app
+    image: eventsgateway-server-dev
     environment:
       - "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=jaeger:4317"
     ports:
       - "5000:5000"
       - "6060:6060"
-    command:
-      - sh
-      - -c
-      - "go run main.go start -d"
     depends_on:
       - zookeeper
       - kafka
+      - jaeger
+    volumes:
+      - ./server:/app
+    command:
+      - sh
+      - -c
+      - 'go run main.go start -d'
+    networks:
+      - eventsgateway
+
+  client-tests:
+    image: eventsgateway-client-dev
+    volumes:
+      - ./:/app
+    command:
+      - sh
+      - -c
+      - 'make test-go'
+    depends_on:
+      - eventsgateway-api
     networks:
       - eventsgateway
       
