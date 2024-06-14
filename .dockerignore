@@ -1,2 +1,3 @@
 bin
 vendor
+spark-notebook/spark-warehouse

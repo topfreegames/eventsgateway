@@ -50,8 +50,7 @@ load-test:
 	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go load-test -d
 
 spark-notebook:
-	@env MY_IP=${MY_IP} docker compose --project-name eventsgateway up -d \
-		spark-notebook
+	@docker compose up jupyter
 
 hive-start:
 	@echo "Starting Hive stack using HOST IP of ${MY_IP}..."

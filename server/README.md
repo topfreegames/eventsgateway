@@ -35,6 +35,10 @@ All dependencies required to produce and consume events locally are bundled in t
 2. `make build-dev` builds a docker image to run the API in development mode, and run tests.
 3. `make deps-start` starts all dependencies: zookeeper, kafka and jeager.
 4. `make run` starts the eventsgateway API in a docker container in development mode (reading from local files). Exposes ports 5000 (api) and 6060 (pprof).
-5. `cd ..` to get back to the client package.
+5. `cd ..` to get back to the client 0package.
 6. `make producer` executes a client that sends one dummy event. Execute it as many times as you want. It will be the number of rows inserted in the table.
 7. `make spark-notebook` runs a jupyter notebook with a pyspark script to consume events from Kafka and store it as a Delta table.
+
+## Testing
+
+To test the server package execute `make test`

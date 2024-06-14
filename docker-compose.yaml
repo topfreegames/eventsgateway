@@ -97,6 +97,15 @@ services:
       - eventsgateway-api
     networks:
       - eventsgateway
-      
+
+  jupyter:
+    image: quay.io/jupyter/all-spark-notebook
+    ports:
+      - 8888:8888
+    volumes:
+      - ./spark-notebook:/home/jovyan/work
+    networks:
+      - eventsgateway
+
 networks:
   eventsgateway:
