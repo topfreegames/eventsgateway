@@ -45,9 +45,6 @@ setup-ci:
 
 test-go: unit integration test-coverage-func
 
-test-coverage-html cover:
-	@go tool cover -html=_build/coverage-all.out
-
 unit: print-unit-section unit-run copy-unit-cover
 
 unit-run:
@@ -89,3 +86,6 @@ test-coverage-func: merge-profiles
 	@echo "Functions NOT COVERED by Tests  ="
 	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
 	@go tool cover -func=_build/coverage-all.out | egrep -v "100.0[%]"
+
+test-coverage-html cover:
+	@go tool cover -html=_build/coverage-all.out

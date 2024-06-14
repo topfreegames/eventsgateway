@@ -7,15 +7,10 @@ client:
   channelBuffer: 500
   lingerInterval: 1s
   batchSize: 1
-  kafkatopic: test-topic 
+  kafkatopic: test-topic
   maxRetries: 3
   numRoutines: 1
   retryInterval: 1s
   grpc:
     serveraddress: eventsgateway-api:5000
     timeoutms: 500ms
-sentry:
-  url: ""
-newrelic:
-  app: "eventsgateway"
-  key: ""
