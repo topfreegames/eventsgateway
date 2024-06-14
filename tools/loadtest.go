@@ -24,7 +24,6 @@ package load_test
 
 import (
 	"fmt"
-	"github.com/topfreegames/eventsgateway/v4/testing"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -41,7 +40,7 @@ type LoadTest struct {
 	duration time.Duration
 	log      logger.Logger
 	threads  int
-	runners  []*testing.runner
+	runners  []*runner
 	wg       sync.WaitGroup
 }
 
@@ -56,9 +55,9 @@ func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
 	lt.duration = lt.config.GetDuration("loadtestclient.duration")
 	lt.config.SetDefault("loadtestclient.threads", 2)
 	lt.threads = lt.config.GetInt("loadtestclient.threads")
-	lt.runners = make([]*testing.runner, lt.threads)
+	lt.runners = make([]*runner, lt.threads)
 	for i := 0; i < lt.threads; i++ {
-		runner, err := testing.newRunner(log, config)
+		runner, err := newRunner(log, config)
 		if err != nil {
 			return nil, err
 		}
