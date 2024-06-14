@@ -11,24 +11,24 @@ TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s
 run:
 	docker compose up eventsgateway-api
 
-build:
-	@mkdir -p bin && go build -o ./bin/eventsgateway main.go
-
-build-image:
-	@docker build -t eventsgateway-server -f Dockerfile .
-
 build-dev:
 	@docker build -t eventsgateway-server-dev -f dev.Dockerfile .
 
 deps-start:
-	@docker compose -f ../docker-compose.yaml --project-name eventsgateway-server-test up -d \
+	@docker compose -f ../docker-compose.yaml up -d \
 		zookeeper kafka jaeger
 
 deps-stop:
-	@docker compose -f ../docker-compose.yaml --project-name eventsgateway-server-test down
+	@docker compose -f ../docker-compose.yaml down
 
 test:
 	docker run -it -v ./:/app eventsgateway-server-dev sh -c 'make test-go'
 
 test-go:
 	@${GOBIN}/ginkgo -tags unit -cover -r --randomize-all --randomize-suites ${TEST_PACKAGES}
+
+build:
+	@mkdir -p bin && go build -o ./bin/eventsgateway main.go
+
+build-image:
+	@docker build -t eventsgateway-server -f Dockerfile .

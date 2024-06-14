@@ -1,7 +1,3 @@
-jaeger:
-  disabled: true
-  samplingProbability: 0.1
-  serviceName: events-gateway
 kafka:
   logger:
     enabled: true
@@ -26,25 +22,6 @@ server:
   maxConnectionAgeGrace: 5s
   Time: 10s
   Timeout: 500ms
-client:
-  async: false
-  channelBuffer: 500
-  lingerInterval: 500ms
-  batchSize: 10
-  kafkatopic: default-topic
-  maxRetries: 3
-  numRoutines: 2
-  retryInterval: 2s
-  grpc:
-    serverAddress: localhost:5000
-    timeout: 500ms
-loadtestclient:
-  duration: 10s
-  threads: 2
-  randSleepCeilingMs: 500
-  randPropsSize: small # small, medium, large, jumbo
-sentry:
-  url: ""
 pprof:
   enabled: true
   address: localhost:6060
