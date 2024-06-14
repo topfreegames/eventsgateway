@@ -6,23 +6,35 @@
 # Copyright © 2018 Top Free Games <backend@tfgco.com>
 
 MY_IP=`ifconfig | grep --color=none -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep --color=none -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1`
-TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*|*server*" \) ! \( -path "*server*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
+TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*server*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 GOBIN="${GOPATH}/bin"
 
-# New commands -------------------------
+.PHONY: load-test producer spark-notebook
 
 build-dev:
 	@docker build -t eventsgateway-client-dev -f dev.Dockerfile .
 
 test:
 	docker compose up client-tests
-	docker compose down
 
-# Old commands --------------------------
+spark-notebook:
+	@docker compose up jupyter
 
-.PHONY: load-test producer spark-notebook
+producer:
+	@echo "Will connect to server at ${MY_IP}:5000"
+	@go run main.go producer -d
+
+load-test:
+	@echo "Will connect to server at ${MY_IP}:5000"
+	@go run main.go load-test -d
+
+deps-start:
+	@docker compose up -d eventsgateway-api
 
 setup:
+	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
+	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
+	@go mod tidy
 	@cd .git/hooks && ln -sf ./hooks/pre-commit.sh pre-commit
 
 setup-ci:
@@ -31,92 +43,49 @@ setup-ci:
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
 	@go mod tidy
 
-build:
-	@mkdir -p bin && go build -o ./bin/eventsgateway-client main.go
+test-go: unit integration test-coverage-func
 
-build-docker:
-	@docker build -t eventsgateway .
+test-coverage-html cover:
+	@go tool cover -html=_build/coverage-all.out
 
-cross-build-linux-amd64:
-	@env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./bin/eventsgateway-linux-amd64
-	@chmod a+x ./bin/eventsgateway-linux-amd64
-
-producer:
-	@echo "Will connect to server at ${MY_IP}:5000"
-	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go producer -d
-
-load-test:
-	@echo "Will connect to server at ${MY_IP}:5000"
-	@env EVENTSGATEWAY_PROMETHEUS_PORT=9092 go run main.go load-test -d
-
-spark-notebook:
-	@docker compose up jupyter
-
-hive-start:
-	@echo "Starting Hive stack using HOST IP of ${MY_IP}..."
-	@cd ./hive && docker compose up
-	@echo "Hive stack started successfully."
-
-hive-stop:
-	@cd ./hive && docker compose down
-
-unit: unit-board clear-coverage-profiles unit-run gather-unit-profiles
-
-clear-coverage-profiles:
-	@find . -name '*.coverprofile' -delete
-
-unit-board:
-	@echo
-	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
-	@echo "\033[1;34m=         Unit Tests         -\033[0m"
-	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
+unit: print-unit-section unit-run copy-unit-cover
 
 unit-run:
-	@${GOBIN}/ginkgo -tags unit -cover -r --randomize-all --randomize-suites ${TEST_PACKAGES}
+	@${GOBIN}/ginkgo -tags unit -v -cover --covermode count -r --randomize-all --randomize-suites ${TEST_PACKAGES}
 
-gather-unit-profiles:
-	@mkdir -p _build
-	@echo "mode: count" > _build/coverage-unit.out
-	@sh -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-unit.out; done'
-
-int integration: integration-board clear-coverage-profiles integration-run gather-integration-profiles
-
-integration-board:
-	@echo
-	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
-	@echo "\033[1;34m=     Integration Tests      -\033[0m"
-	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
+integration: print-integration-section integration-run copy-integration-cover
 
 integration-run:
-	@GRPC_GO_RETRY=on ${GOBIN}/ginkgo -tags integration -cover -r --randomize-all --randomize-suites \
-		--skip-package=./app ${TEST_PACKAGES} --verbose
+	@GRPC_GO_RETRY=on ${GOBIN}/ginkgo -v -tags integration -cover --covermode count -r --randomize-all --randomize-suites \
+		--skip-package=./app ${TEST_PACKAGES}
 
-int-ci: integration-board clear-coverage-profiles deps-test-ci integration-run gather-integration-profiles
-
-gather-integration-profiles:
+copy-unit-cover:
 	@mkdir -p _build
-	@echo "mode: count" > _build/coverage-integration.out
-	@sh -c 'for f in $$(find . -name "*.coverprofile"); do tail -n +2 $$f >> _build/coverage-integration.out; done'
+	@cp ./coverprofile.out _build/coverage-unit.out
+
+copy-integration-cover:
+	@mkdir -p _build
+	@cp ./coverprofile.out _build/coverage-integration.out
 
 merge-profiles:
 	@mkdir -p _build
 	@${GOBIN}/gocovmerge _build/*.out > _build/coverage-all.out
 
-test-coverage-func coverage-func: merge-profiles
+print-unit-section:
 	@echo
-	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
-	@echo "\033[1;34mFunctions NOT COVERED by Tests\033[0m"
-	@echo "\033[1;34m=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\033[0m"
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+	@echo "=        Unit Tests         ="
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+
+print-integration-section:
+	@echo
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+	@echo "=     Integration Tests     ="
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+
+test-coverage-func: merge-profiles
+	@echo
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+	@echo "Functions NOT COVERED by Tests  ="
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
 	@go tool cover -func=_build/coverage-all.out | egrep -v "100.0[%]"
-
-test-go: unit int test-coverage-func
-
-test-ci: unit test-coverage-func
-
-test-coverage-html cover:
-	@go tool cover -html=_build/coverage-all.out
-
-rtfd:
-	@rm -rf docs/_build
-	@sphinx-build -b html -d ./docs/_build/doctrees ./docs/ docs/_build/html
-	@open docs/_build/html/index.html
