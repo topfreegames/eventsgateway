@@ -15,5 +15,4 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - run: cd server
-      - run: make test
+      - run: cd server && make test
