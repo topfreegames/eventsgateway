@@ -12,7 +12,7 @@ GOBIN="${GOPATH}/bin"
 .PHONY: load-test producer spark-notebook
 
 build-dev:
-	@docker build -t eventsgateway-client-dev -f dev.Dockerfile .
+	@docker build -t eventsgateway-client-dev --cache-from eventsgateway-client-dev -f dev.Dockerfile .
 
 test:
 	docker compose up client-tests
