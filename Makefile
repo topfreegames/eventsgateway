@@ -13,6 +13,7 @@ GOBIN="${GOPATH}/bin"
 
 build-dev:
 	@docker build -t eventsgateway-client-dev -f dev.Dockerfile .
+	@make -f server/Makefile build-dev
 
 test:
 	docker compose up client-tests
