@@ -12,7 +12,7 @@ run:
 	docker compose up eventsgateway-api
 
 build-dev:
-	@docker build -t eventsgateway-server-dev --cache-from eventsgateway-server-dev -f dev.Dockerfile .
+	@docker build -t eventsgateway-server-dev -f dev.Dockerfile .
 
 deps-start:
 	@docker compose -f ../docker-compose.yaml up -d \
