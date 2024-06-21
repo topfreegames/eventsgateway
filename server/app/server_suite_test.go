@@ -1,4 +1,6 @@
+//go:build unit
 // +build unit
+
 // MIT License
 //
 // Copyright (c) 2018 Top Free Games
@@ -29,13 +31,35 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
 
+	"strings"
 	"testing"
 
-	"github.com/topfreegames/eventsgateway/v4/logger"
-	"github.com/topfreegames/eventsgateway/v4/mocks"
-	. "github.com/topfreegames/eventsgateway/v4/testing"
+	"github.com/topfreegames/eventsgateway/v4/server/logger"
+	"github.com/topfreegames/eventsgateway/v4/server/mocks"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
+
+// GetDefaultConfig returns the configuration at ./config/test.yaml
+func GetDefaultConfig() (*viper.Viper, error) {
+	cfg := viper.New()
+	cfg.SetConfigName("test")
+	cfg.SetConfigType("yaml")
+	cfg.SetEnvPrefix("eventsgateway")
+	cfg.AddConfigPath(".")
+	cfg.AddConfigPath("./config")
+	cfg.AddConfigPath("../config")
+	cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	cfg.AutomaticEnv()
+
+	// If a config file is found, read it in.
+	if err := cfg.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	cfg.Set("prometheus.enabled", "false")
+
+	return cfg, nil
+}
 
 func TestClient(t *testing.T) {
 	RegisterFailHandler(Fail)

@@ -14,17 +14,17 @@ import (
 	"time"
 
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
-	"github.com/topfreegames/eventsgateway/v4/forwarder"
-	"github.com/topfreegames/eventsgateway/v4/logger"
-	"github.com/topfreegames/eventsgateway/v4/metrics"
+	"github.com/topfreegames/eventsgateway/v4/server/forwarder"
+	"github.com/topfreegames/eventsgateway/v4/server/logger"
+	"github.com/topfreegames/eventsgateway/v4/server/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type KafkaSender struct {
-	logger      logger.Logger
-	producer    forwarder.Forwarder
+	logger   logger.Logger
+	producer forwarder.Forwarder
 }
 
 func NewKafkaSender(

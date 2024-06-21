@@ -1,5 +1,7 @@
 // eventsgateway
+//go:build integration
 // +build integration
+
 // https://github.com/topfreegames/eventsgateway
 //
 // Licensed under the MIT license:
@@ -14,19 +16,16 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/topfreegames/eventsgateway/v4/app"
 	"github.com/topfreegames/eventsgateway/v4/client"
 	"github.com/topfreegames/eventsgateway/v4/testing"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
 	"google.golang.org/grpc"
 )
 
 var _ = Describe("Sync Client", func() {
 	var (
-		a        *app.App
-		c        *client.Client
+		c          *client.Client
 		kafkaTopic string
-		consumer *testing.Consumer
+		consumer   *testing.Consumer
 	)
 	name := "EventName"
 	props := map[string]string{
@@ -48,18 +47,11 @@ var _ = Describe("Sync Client", func() {
 	AfterEach(func() {
 		err := consumer.Clean()
 		Expect(err).NotTo(HaveOccurred())
-		if a != nil {
-			a.Stop()
-		}
-
 		config.Set("otlp.enabled", false)
 	})
 
-	startAppAndClient := func() {
+	initClient := func() {
 		var err error
-		a, err = app.NewApp("0.0.0.0", 5000, wrappedLogger, config)
-		Expect(err).NotTo(HaveOccurred())
-		go a.Run()
 		config.Set("client.async", false)
 		c, err = client.NewClient(
 			"",
@@ -73,7 +65,7 @@ var _ = Describe("Sync Client", func() {
 
 	Describe("Send", func() {
 		It("Should send event synchronously", func() {
-			startAppAndClient()
+			initClient()
 
 			props["messageID"] = uuid.New().String()
 			err := c.Send(context.Background(), name, props)
@@ -84,17 +76,10 @@ var _ = Describe("Sync Client", func() {
 			msgs, errs := consumer.Consume(fmt.Sprintf("sv-uploads-%s", kafkaTopic))
 			consumedMessage := expectOneMessage(props["messageID"], msgs, errs)
 			Expect(consumedMessage).NotTo(BeNil())
-
-			// verify otelsarama headers
-			Expect(len(consumedMessage.Headers)).To(Equal(1))
-			wrappedMessage := otelsarama.NewConsumerMessageCarrier(consumedMessage)
-
-			otelsaramaExpectedKey := "traceparent"
-			Expect(wrappedMessage.Keys()[0]).To(Equal(otelsaramaExpectedKey))
 		})
 
 		It("Should send multiple events synchronously", func() {
-			startAppAndClient()
+			initClient()
 			const msgAmount = 3
 			var err error
 			var msgIDs []string

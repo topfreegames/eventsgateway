@@ -78,7 +78,9 @@ func main() {
 
 All dependencies required to produce and consume events locally are bundled in this project.
 
-1. `make deps-start` will start docker containers for `zookeeper` `kafka` and `localstack`.
+1. `make build-dev` will build a development docker image for the client.
+2. `make deps-start` will start docker containers for `zookeeper` `kafka`, `eventsgateway-api`
+2. 
 
 These are the necessary dependencies for EventsGateway server.
 

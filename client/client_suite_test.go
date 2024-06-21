@@ -1,5 +1,7 @@
 // eventsgateway
+//go:build unit
 // +build unit
+
 // https://github.com/topfreegames/eventsgateway
 //
 // Licensed under the MIT license:
@@ -17,7 +19,7 @@ import (
 
 	"testing"
 
-	. "github.com/topfreegames/eventsgateway/v4/testing"
+	t "github.com/topfreegames/eventsgateway/v4/testing"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
 )
 
@@ -35,7 +37,7 @@ var (
 
 var _ = BeforeEach(func() {
 	log = &logger.NullLogger{}
-	config, _ = GetDefaultConfig()
+	config, _ = t.GetDefaultConfig()
 
 	mockCtrl = gomock.NewController(GinkgoT())
 	mockGRPCClient = mockpb.NewMockGRPCForwarderClient(mockCtrl)

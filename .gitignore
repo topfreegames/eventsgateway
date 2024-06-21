@@ -21,7 +21,8 @@ bin
 *.swp
 
 ./eventsgateway
-spark-notebook/work/.ipynb_checkpoints
+spark-notebook/.ipynb_checkpoints
+spark-notebook/spark-warehouse
 
 Sidecarfile
 
