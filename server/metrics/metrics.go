@@ -64,40 +64,6 @@ var (
 		[]string{"route", "topic", "retry", "reason"},
 	)
 
-	// ClientRequestsResponseTime summary, observes the API response time as perceived by the client
-	ClientRequestsResponseTime *prometheus.HistogramVec
-
-	// ClientRequestsSuccessCounter is the count of successfull calls to the server
-	ClientRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "eventsgateway",
-		Subsystem: "client",
-		Name:      "requests_success_counter",
-		Help:      "the count of successfull client requests to the server",
-	},
-		[]string{"route", "topic", "retry"},
-	)
-
-	// ClientRequestsFailureCounter is the count of failed calls to the server
-	ClientRequestsFailureCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "eventsgateway",
-		Subsystem: "client",
-		Name:      "requests_failure_counter",
-		Help:      "the count of failed client requests to the server",
-	},
-		[]string{"route", "topic", "retry", "reason"},
-	)
-
-	// ClientRequestsDroppedCounter is the count of requests that were dropped due
-	// to req.Retry > maxRetries
-	ClientRequestsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "eventsgateway",
-		Subsystem: "client",
-		Name:      "requests_dropped_counter",
-		Help:      "the count of dropped client requests to the server",
-	},
-		[]string{"topic"},
-	)
-
 	APITopicsSubmission = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "eventsgateway",
 		Subsystem: "api",
