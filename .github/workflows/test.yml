@@ -1,18 +1,19 @@
 name: Run tests
-on:
-  push:
+on: push
 jobs:
-  tests:
-    name: Run unit and integration tests
+  client-tests:
+    name: Run client tests
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.17'
       - name: Check out the repo
-        uses: actions/checkout@v2
-      - name: Set up ci
-        run: make setup-ci
-      - name: Test
-        run: GOPATH=/home/runner/go make test
+        uses: actions/checkout@v4
+      - run: make build-dev
+      - run: make test
+  server-tests:
+    name: Run server tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - run: cd server && make build-dev
+      - run: cd server && make test

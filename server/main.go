@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2019 Top Free Games
+// Copyright (c) 2018 Top Free Games
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,53 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package producer
+package main
 
 import (
-	"context"
-	"time"
-
-	"github.com/spf13/viper"
-	"github.com/topfreegames/eventsgateway/v4/client"
-	"github.com/topfreegames/eventsgateway/v4/logger"
+	"github.com/topfreegames/eventsgateway/v4/server/cmd"
 )
 
-// Producer is the app strupure
-type Producer struct {
-	log    logger.Logger
-	config *viper.Viper
-	client *client.Client
-}
-
-// NewProducer creates test client
-func NewProducer(
-	log logger.Logger, config *viper.Viper,
-) (*Producer, error) {
-	p := &Producer{
-		log:    log,
-		config: config,
-	}
-	err := p.configure()
-	return p, err
-}
-
-func (p *Producer) configure() error {
-	c, err := client.New("", p.config, p.log, nil)
-	if err != nil {
-		return err
-	}
-	p.client = c
-	return nil
-}
-
-// Run runs the test client
-func (p *Producer) Run() {
-	if err := p.client.Send(context.Background(), "test-event", map[string]string{
-		"some-prop": "some value",
-	}); err != nil {
-		println(err.Error())
-		return
-	}
-	time.Sleep(1 * time.Second)
-	println("done")
+func main() {
+	cmd.Execute()
 }

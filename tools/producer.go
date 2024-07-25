@@ -20,36 +20,53 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package cmd
+package tools
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
-	"github.com/topfreegames/eventsgateway/v4/tools"
+	"context"
+	"github.com/topfreegames/eventsgateway/v4/client"
+	"time"
+
+	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/v4/logger"
 )
 
-// producerCMD represents the producer command
-var producerCMD = &cobra.Command{
-	Use:   "producer",
-	Short: "runs a client that sends a dummy message",
-	Long:  `runs a client that sends a dummy message`,
-	Run: func(cmd *cobra.Command, args []string) {
-		log := logrus.New()
-		if debug {
-			log.SetLevel(logrus.DebugLevel)
-		}
-		if json {
-			log.Formatter = new(logrus.JSONFormatter)
-		}
-		p, err := tools.NewProducer(logruswrapper.NewWithLogger(log), config)
-		if err != nil {
-			log.Panic(err)
-		}
-		p.Run()
-	},
+// Producer is the app strupure
+type Producer struct {
+	log    logger.Logger
+	config *viper.Viper
+	client *client.Client
 }
 
-func init() {
-	RootCmd.AddCommand(producerCMD)
+// NewProducer creates test client
+func NewProducer(
+	log logger.Logger, config *viper.Viper,
+) (*Producer, error) {
+	p := &Producer{
+		log:    log,
+		config: config,
+	}
+	err := p.configure()
+	return p, err
+}
+
+func (p *Producer) configure() error {
+	c, err := client.New("", p.config, p.log, nil)
+	if err != nil {
+		return err
+	}
+	p.client = c
+	return nil
+}
+
+// Run runs the test client
+func (p *Producer) Run() {
+	if err := p.client.Send(context.Background(), "test-event", map[string]string{
+		"some-prop": "some value",
+	}); err != nil {
+		println(err.Error())
+		return
+	}
+	time.Sleep(1 * time.Second)
+	println("done")
 }

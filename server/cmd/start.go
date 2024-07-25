@@ -28,8 +28,8 @@ import (
 	"github.com/mmcloughlin/professor"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/topfreegames/eventsgateway/v4/app"
-	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
+	"github.com/topfreegames/eventsgateway/v4/server/app"
+	logruswrapper "github.com/topfreegames/eventsgateway/v4/server/logger/logrus"
 )
 
 var host string

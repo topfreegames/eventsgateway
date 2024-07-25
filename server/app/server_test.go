@@ -1,3 +1,4 @@
+//go:build unit
 // +build unit
 
 package app_test
@@ -11,8 +12,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
-	"github.com/topfreegames/eventsgateway/v4/app"
-	"github.com/topfreegames/eventsgateway/v4/sender"
+	"github.com/topfreegames/eventsgateway/v4/server/app"
+	"github.com/topfreegames/eventsgateway/v4/server/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 

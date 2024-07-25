@@ -1,0 +1,4 @@
+kafka:
+  producer:
+    brokers: kafka:9092
+    maxMessageBytes: 3000000
