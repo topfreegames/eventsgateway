@@ -27,7 +27,7 @@ test:
 test-go:
 	@${GOBIN}/ginkgo -tags unit -cover -r --randomize-all --randomize-suites ${TEST_PACKAGES}
 
-build:
+build-go:
 	@mkdir -p bin && go build -o ./bin/eventsgateway main.go
 
 build-image:
