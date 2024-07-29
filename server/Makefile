@@ -24,6 +24,9 @@ deps-stop:
 test:
 	@docker run -i -v ./:/app eventsgateway-server-dev sh -c 'make test-go'
 
+test-ci:
+	@docker run -i eventsgateway-server-dev sh -c 'make test-go'
+
 test-go:
 	@${GOBIN}/ginkgo -tags unit -cover -r --randomize-all --randomize-suites ${TEST_PACKAGES}
 
