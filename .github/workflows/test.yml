@@ -7,7 +7,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - run: set -euo pipefail
       - run: make build-dev
       - run: make test
   server-tests:
@@ -16,6 +15,5 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - run: set -euo pipefail
       - run: cd server && make build-dev
       - run: cd server && make test

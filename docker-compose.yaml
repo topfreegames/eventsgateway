@@ -82,7 +82,7 @@ services:
     command:
       - sh
       - -c
-      - 'make test-go'
+      - 'sh -c make test-go'
     depends_on:
       - eventsgateway-api
     networks:

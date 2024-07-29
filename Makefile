@@ -16,7 +16,8 @@ build-dev:
 	@make -f server/Makefile build-dev
 
 test:
-	@docker compose up client-tests
+	@make deps-start
+	@docker run -it -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 spark-notebook:
 	@docker compose up jupyter
