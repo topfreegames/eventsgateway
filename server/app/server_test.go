@@ -42,7 +42,7 @@ var _ = Describe("Client", func() {
 			res, err := s.SendEvent(ctx, e)
 			Expect(res).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("rpc error: code = FailedPrecondition desc = id, topic, name and timestamp should be set"))
+			Expect(err.Error()).To(Equal("rpc error: code = FailedPrecondition desc = id, topic, name and timestamp should be se"))
 		})
 
 		It("should fail if name is not set", func() {

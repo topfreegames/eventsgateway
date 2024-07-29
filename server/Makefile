@@ -22,7 +22,7 @@ deps-stop:
 	@docker compose -f ../docker-compose.yaml down
 
 test:
-	@docker run -v ./:/app eventsgateway-server-dev sh -c 'make test-go'
+	@docker run -it -v ./:/app eventsgateway-server-dev sh -c 'make test-go'
 
 test-go:
 	@${GOBIN}/ginkgo -tags unit -cover -r --randomize-all --randomize-suites ${TEST_PACKAGES}
