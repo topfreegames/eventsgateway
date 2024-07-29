@@ -29,7 +29,7 @@ ADD .. /go/src/github.com/topfreegames/eventsgateway
 
 RUN apk add --no-cache make git g++ && \
     cd /go/src/github.com/topfreegames/eventsgateway && \
-    make build && \
+    make build-go && \
     mv bin/eventsgateway /app/eventsgateway && \
     mv config /app/config
 

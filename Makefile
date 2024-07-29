@@ -19,10 +19,6 @@ test:
 	@make deps-start
 	@docker run -i -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
-test-ci:
-	@docker compose up eventsgateway-api
-	@docker run -i --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
-
 spark-notebook:
 	@docker compose up jupyter
 
@@ -40,6 +36,13 @@ setup:
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
 	@go mod tidy
 	@cd .git/hooks && ln -sf ./hooks/pre-commit.sh pre-commit
+
+# Run all CI commands inside a single Make target to make easier debugging.
+test-ci:
+	@docker build -t eventsgateway-client-dev -f dev.Dockerfile .
+	@docker build -t eventsgateway-server -f server/Dockerfile server
+	@docker compose -f docker-compose-ci.yaml up -d eventsgateway-api --wait
+	@docker run -i --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 test-go: unit integration test-coverage-func
 

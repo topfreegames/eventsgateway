@@ -7,7 +7,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - run: make build-dev
       - run: make test-ci
   server-tests:
     name: Run server tests
@@ -15,5 +14,4 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - run: cd server && make build-dev
       - run: cd server && make test-ci
