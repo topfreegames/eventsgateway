@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/spf13/viper"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
-	"go.opentelemetry.io/otel"
 	"log"
 	"os"
 	"strings"
@@ -14,7 +12,7 @@ import (
 )
 
 type KafkaForwarder struct {
-	producer sarama.SyncProducer
+	producer    sarama.SyncProducer
 	topicPrefix string
 }
 
@@ -51,12 +49,8 @@ func NewKafkaForwarder(config *viper.Viper) (*KafkaForwarder, error) {
 
 	topicPrefix := config.GetString("kafka.producer.topicPrefix")
 
-	tracerProvider := otelsarama.WithTracerProvider(otel.GetTracerProvider())
-	propagator := otelsarama.WithPropagators(otel.GetTextMapPropagator())
-	wrappedProducer := otelsarama.WrapSyncProducer(kafkaConf, producer, tracerProvider, propagator)
-
 	return &KafkaForwarder{
-		producer: wrappedProducer,
+		producer:    producer,
 		topicPrefix: topicPrefix,
 	}, nil
 }
@@ -67,9 +61,6 @@ func (k KafkaForwarder) Produce(ctx context.Context, topic string, message []byt
 		Topic: prefixedTopic,
 		Value: sarama.ByteEncoder(message),
 	}
-
-	// ensure the otelsarama wrapped producer will use the span from otelgrpc
-	otel.GetTextMapPropagator().Inject(ctx, otelsarama.NewProducerMessageCarrier(kafkaMsg))
 
 	return k.producer.SendMessage(kafkaMsg)
 }
