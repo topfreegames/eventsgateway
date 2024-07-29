@@ -16,7 +16,7 @@ build-dev:
 	@make -f server/Makefile build-dev
 
 test:
-	docker compose up client-tests
+	@docker compose up client-tests
 
 spark-notebook:
 	@docker compose up jupyter

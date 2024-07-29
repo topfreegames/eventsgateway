@@ -22,7 +22,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_started
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "9092" ]
       interval: 5s
@@ -61,9 +62,10 @@ services:
       - "5000:5000"
       - "6060:6060"
     depends_on:
-      - zookeeper
-      - kafka
-      - jaeger
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
     volumes:
       - ./server:/app
     command:

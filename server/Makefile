@@ -9,7 +9,7 @@ GOBIN="${GOPATH}/bin"
 TEST_PACKAGES=`find . -type f -name "*.go" ! \( -path "*vendor*" \) | sed -En "s/([^\.])\/.*/\1/p" | uniq`
 
 run:
-	docker compose up eventsgateway-api
+	@docker compose up eventsgateway-api
 
 build-dev:
 	@docker build -t eventsgateway-server-dev -f dev.Dockerfile .
@@ -22,7 +22,7 @@ deps-stop:
 	@docker compose -f ../docker-compose.yaml down
 
 test:
-	docker run -v ./:/app eventsgateway-server-dev sh -c 'make test-go'
+	@docker run -v ./:/app eventsgateway-server-dev sh -c 'make test-go'
 
 test-go:
 	@${GOBIN}/ginkgo -tags unit -cover -r --randomize-all --randomize-suites ${TEST_PACKAGES}
