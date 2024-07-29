@@ -22,10 +22,10 @@ spark-notebook:
 	@docker compose up jupyter
 
 producer:
-	@docker run -it --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c "go run main.go producer -d"
+	@docker run -it -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c "go run main.go producer -d"
 
 load-test:
-	@docker run -it --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c "go run main.go load-test -d"
+	@docker run -it -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c "go run main.go load-test -d"
 
 deps-start:
 	@docker compose up -d eventsgateway-api
