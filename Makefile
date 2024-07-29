@@ -20,7 +20,7 @@ test:
 	@docker run -i -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 test-ci:
-	@make deps-start
+	@docker compose up eventsgateway-api
 	@docker run -i --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 spark-notebook:
