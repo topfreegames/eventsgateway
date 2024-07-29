@@ -17,7 +17,7 @@ build-dev:
 
 test:
 	@make deps-start
-	@docker run -it -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
+	@docker run -t -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 spark-notebook:
 	@docker compose up jupyter
