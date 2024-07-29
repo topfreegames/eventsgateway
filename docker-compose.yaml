@@ -66,25 +66,18 @@ services:
         condition: service_healthy
       jaeger:
         condition: service_started
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5000" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
     volumes:
       - ./server:/app
     command:
       - sh
       - -c
       - 'go run main.go start -d'
-    networks:
-      - eventsgateway
-
-  client-tests:
-    image: eventsgateway-client-dev
-    volumes:
-      - ./:/app
-    command:
-      - sh
-      - -c
-      - 'sh -c make test-go'
-    depends_on:
-      - eventsgateway-api
     networks:
       - eventsgateway
 

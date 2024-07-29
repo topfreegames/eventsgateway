@@ -29,7 +29,7 @@ load-test:
 	@docker run -it -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c "go run main.go load-test -d"
 
 deps-start:
-	@docker compose up -d eventsgateway-api
+	@docker compose up -d eventsgateway-api --wait
 
 setup:
 	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.19.1
