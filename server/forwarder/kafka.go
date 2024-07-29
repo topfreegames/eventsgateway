@@ -3,7 +3,7 @@ package forwarder
 import (
 	"context"
 	"fmt"
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -41,7 +41,6 @@ func NewKafkaForwarder(config *viper.Viper) (*KafkaForwarder, error) {
 	kafkaConf.Version = sarama.V2_2_0_0
 
 	brokers := strings.Split(config.GetString("kafka.producer.brokers"), ",")
-
 	producer, err := sarama.NewSyncProducer(brokers, kafkaConf)
 	if err != nil {
 		return nil, err
