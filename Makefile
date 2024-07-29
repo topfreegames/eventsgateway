@@ -31,14 +31,14 @@ deps-start:
 	@docker compose up -d eventsgateway-api
 
 setup:
-	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
+	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.19.1
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
 	@go mod tidy
 	@cd .git/hooks && ln -sf ./hooks/pre-commit.sh pre-commit
 
 setup-ci:
 	@go install github.com/mattn/goveralls@v0.0.11
-	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
+	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.19.1
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
 	@go mod tidy
 
