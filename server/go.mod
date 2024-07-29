@@ -9,8 +9,8 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/mmcloughlin/professor v0.0.0-20170922221822-6b97112ab8b3
-	github.com/onsi/ginkgo/v2 v2.1.4
-	github.com/onsi/gomega v1.20.0
+	github.com/onsi/ginkgo/v2 v2.19.1
+	github.com/onsi/gomega v1.34.0
 	github.com/prometheus/client_golang v1.12.2
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/sirupsen/logrus v1.8.1
@@ -34,10 +34,10 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -65,13 +65,13 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.9.0 // indirect
 	go.opentelemetry.io/otel/trace v1.9.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.18.0 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
+	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	google.golang.org/genproto v0.0.0-20211118181313-81c1377c94b1 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
