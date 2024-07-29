@@ -17,7 +17,7 @@ build-dev:
 
 test:
 	@#make deps-start
-	@compose up eventsgateway-api --wait
+	@docker compose up eventsgateway-api --wait
 	@docker run -i -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 spark-notebook:
