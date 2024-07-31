@@ -6,7 +6,7 @@ kafka:
     timeout: 250ms
     brokers: kafka:9092
 client:
-  async: false
+  async: true
   channelBuffer: 500
   lingerInterval: 500ms
   batchSize: 10
@@ -15,10 +15,10 @@ client:
   numRoutines: 2
   retryInterval: 2s
   grpc:
-    serverAddress: eventsgateway-api:5000
+    serverAddress: localhost:5000 #eventsgateway-api:5000
     timeout: 500ms
 loadtestclient:
   duration: 10s
-  threads: 2
+  threads: 15
   randSleepCeilingMs: 500
-  randPropsSize: small # small, medium, large, jumbo
+  randPropsSize: large # small, medium, large, jumbo

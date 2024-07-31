@@ -25,3 +25,5 @@ server:
 pprof:
   enabled: true
   address: localhost:6060
+otlp:
+  enabled: true

@@ -56,8 +56,9 @@ services:
 
   eventsgateway-api:
     image: eventsgateway-server-dev
-#    environment:
-#      - "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=jaeger:4317"
+    environment:
+      - "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317"
+      - "OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317"
     ports:
       - "5000:5000"
       - "6060:6060"
