@@ -10,10 +10,16 @@ package client
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"google.golang.org/grpc/metadata"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
 	"github.com/topfreegames/eventsgateway/v4/metrics"
@@ -69,12 +75,16 @@ func (s *gRPCClientSync) configureGRPCForwarderClient(
 	s.logger.WithFields(map[string]interface{}{
 		"operation": "configureGRPCForwarderClient",
 	}).Info("connecting to grpc server")
-	tracer := opentracing.GlobalTracer()
+	//tracer := opentracing.GlobalTracer()
+	err := s.configureOTel()
+	otelPropagator := otelgrpc.WithPropagators(otel.GetTextMapPropagator())
+	otelTracerProvider := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
+
 	dialOpts := append(
 		[]grpc.DialOption{
 			grpc.WithInsecure(),
 			grpc.WithChainUnaryInterceptor(
-				otgrpc.OpenTracingClientInterceptor(tracer),
+				otelgrpc.UnaryClientInterceptor(otelPropagator, otelTracerProvider),
 				s.metricsReporterInterceptor,
 			),
 		},
@@ -86,6 +96,42 @@ func (s *gRPCClientSync) configureGRPCForwarderClient(
 	}
 	s.conn = conn
 	s.client = pb.NewGRPCForwarderClient(conn)
+	return nil
+}
+
+//OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+//OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4317
+
+func (s *gRPCClientSync) configureOTel() error {
+	md := metadata.Pairs(
+		"test1", "value1",
+		"test2", "value2",
+	)
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	traceExporter, err := otlptracegrpc.New(
+		ctx,
+		otlptracegrpc.WithEndpoint("localhost:4317"),
+		otlptracegrpc.WithInsecure())
+
+	if err != nil {
+		s.logger.Error("Unable to create a OTL exporter", err)
+		return err
+	}
+
+	traceResources := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("events-gateway-client"),
+	)
+
+	traceProvider := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(traceExporter),
+		tracesdk.WithResource(traceResources),
+	)
+	otel.SetTracerProvider(traceProvider)
+
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+	otel.SetTextMapPropagator(propagator)
+
 	return nil
 }
 

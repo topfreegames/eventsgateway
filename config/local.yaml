@@ -6,7 +6,7 @@ kafka:
     timeout: 250ms
     brokers: kafka:9092
 client:
-  async: true
+  async: false
   channelBuffer: 500
   lingerInterval: 500ms
   batchSize: 10
