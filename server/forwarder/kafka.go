@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel"
 	"log"
 	"os"
 	"strings"
@@ -55,11 +56,15 @@ func NewKafkaForwarder(config *viper.Viper) (*KafkaForwarder, error) {
 }
 
 func (k KafkaForwarder) Produce(ctx context.Context, topic string, message []byte) (int32, int64, error) {
+	_, span := otel.Tracer("forwarder.kafka").Start(ctx, "forwarder.kafka.Produce")
+
 	prefixedTopic := fmt.Sprintf("%s%s", k.topicPrefix, topic)
 	kafkaMsg := &sarama.ProducerMessage{
 		Topic: prefixedTopic,
 		Value: sarama.ByteEncoder(message),
 	}
 
-	return k.producer.SendMessage(kafkaMsg)
+	partition, offset, err := k.producer.SendMessage(kafkaMsg)
+	defer span.End()
+	return partition, offset, err
 }

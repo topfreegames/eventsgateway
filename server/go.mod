@@ -7,7 +7,6 @@ require (
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/mmcloughlin/professor v0.0.0-20170922221822-6b97112ab8b3
 	github.com/onsi/ginkgo/v2 v2.19.1
 	github.com/onsi/gomega v1.34.0

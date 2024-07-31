@@ -10,6 +10,8 @@ package sender
 import (
 	"bytes"
 	"context"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"sync"
 	"time"
 
@@ -67,6 +69,8 @@ func (k *KafkaSender) SendEvent(
 	ctx context.Context,
 	event *pb.Event,
 ) error {
+	_, span := otel.Tracer("sender.kafka").Start(ctx, "sender.kafka.SendEvent")
+
 	l := k.logger.WithFields(map[string]interface{}{
 		"topic": event.GetTopic(),
 		"event": event,
@@ -103,7 +107,10 @@ func (k *KafkaSender) SendEvent(
 	}
 
 	topic := event.GetTopic()
+	span.SetAttributes(attribute.Key("kafkaTopic").String(topic))
+
 	partition, offset, err := k.producer.Produce(ctx, topic, buf.Bytes())
+
 	if err != nil {
 		l.WithError(err).
 			Error("error producing event to kafka")
@@ -115,6 +122,6 @@ func (k *KafkaSender) SendEvent(
 		"partition": partition,
 		"offset":    offset,
 	}).Debug("event sent to kafka")
-
+	span.End()
 	return nil
 }

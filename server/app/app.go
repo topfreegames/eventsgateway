@@ -27,6 +27,9 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/topfreegames/eventsgateway/v4/server/forwarder"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"net"
 	"time"
@@ -35,22 +38,17 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
 	"github.com/topfreegames/eventsgateway/v4/server/metrics"
 	"github.com/topfreegames/eventsgateway/v4/server/sender"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/spf13/viper"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
-)
-
-const (
-	OTLServiceName = "events-gateway"
 )
 
 // App is the app structure
@@ -117,27 +115,34 @@ func (a *App) configure() error {
 }
 
 func (a *App) configureOTel() error {
-
-	traceExporter, err := otlptracegrpc.New(context.Background())
+	traceExporter, err := otlptracegrpc.New(
+		context.Background(),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", a.config.GetString("otlp.jaegerHost"), a.config.GetInt("otlp.jaegerPort"))),
+		otlptracegrpc.WithInsecure())
 
 	if err != nil {
 		a.log.Error("Unable to create a OTL exporter", err)
 		return err
 	}
 
-	traceResources := resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceNameKey.String(OTLServiceName),
-	)
-
 	traceProvider := tracesdk.NewTracerProvider(
+		// Always be sure to batch in production.
 		tracesdk.WithBatcher(traceExporter),
-		tracesdk.WithResource(traceResources),
+		// Record information about this application in a Resource.
+		tracesdk.WithResource(
+			resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceName(a.config.GetString("otlp.serviceName")),
+				attribute.String("clustername", a.config.GetString("server.k8sClusterName")),
+				attribute.String("environment", a.config.GetString("server.environment")),
+			),
+		),
+		tracesdk.WithSampler(tracesdk.TraceIDRatioBased(a.config.GetFloat64("otlp.traceRatio"))),
 	)
-	otel.SetTracerProvider(traceProvider)
 
 	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
 	otel.SetTextMapPropagator(propagator)
+	otel.SetTracerProvider(traceProvider)
 
 	return nil
 }
@@ -253,17 +258,18 @@ func (a *App) Run() {
 	otelPropagator := otelgrpc.WithPropagators(otel.GetTextMapPropagator())
 	otelTracerProvider := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
 
-	opts = append(opts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-		a.metricsReporterInterceptor,
-		otelgrpc.UnaryServerInterceptor(otelTracerProvider, otelPropagator),
-	)))
-	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),
-		MaxConnectionAge:      a.config.GetDuration("server.maxConnectionAge"),
-		MaxConnectionAgeGrace: a.config.GetDuration("server.maxConnectionAgeGrace"),
-		Time:                  a.config.GetDuration("server.Time"),
-		Timeout:               a.config.GetDuration("server.Timeout"),
-	}))
+	opts = append(
+		opts,
+		grpc.UnaryInterceptor(a.metricsReporterInterceptor),
+		grpc.StatsHandler(otelgrpc.NewServerHandler(otelPropagator, otelTracerProvider)),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),
+			MaxConnectionAge:      a.config.GetDuration("server.maxConnectionAge"),
+			MaxConnectionAgeGrace: a.config.GetDuration("server.maxConnectionAgeGrace"),
+			Time:                  a.config.GetDuration("server.Time"),
+			Timeout:               a.config.GetDuration("server.Timeout"),
+		}))
+
 	a.grpcServer = grpc.NewServer(opts...)
 
 	pb.RegisterGRPCForwarderServer(a.grpcServer, a.Server)

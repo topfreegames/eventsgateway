@@ -1,3 +1,4 @@
+# Those properties can also be loaded as ENV Vars with EVENTSGATEWAY_ prefix.
 kafka:
   logger:
     enabled: true
@@ -22,8 +23,14 @@ server:
   maxConnectionAgeGrace: 5s
   Time: 10s
   Timeout: 500ms
+  k8sClusterName: local
+  environment: development
 pprof:
   enabled: true
   address: localhost:6060
 otlp:
   enabled: true
+  serviceName: "eventsgateway-server"
+  traceRatio: 1.0 #Sends 50% of the traces to jaeger
+  jaegerHost: jaeger
+  jaegerPort: 4317
