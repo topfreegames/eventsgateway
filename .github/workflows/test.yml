@@ -7,13 +7,11 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - run: make build-dev
-      - run: make test
+      - run: make test-ci
   server-tests:
     name: Run server tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - run: cd server && make build-dev
-      - run: cd server && make test
+      - run: cd server && make test-ci

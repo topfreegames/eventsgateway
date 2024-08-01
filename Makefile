@@ -16,33 +16,33 @@ build-dev:
 	@make -f server/Makefile build-dev
 
 test:
-	docker compose up client-tests
+	@make deps-start
+	@docker run -i -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 spark-notebook:
 	@docker compose up jupyter
 
 producer:
-	@echo "Will connect to server at ${MY_IP}:5000"
-	@go run main.go producer -d
+	@docker run -it -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c "go run main.go producer -d"
 
 load-test:
-	@echo "Will connect to server at ${MY_IP}:5000"
-	@go run main.go load-test -d
+	@docker run -it -v ./:/app --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c "go run main.go load-test -d"
 
 deps-start:
-	@docker compose up -d eventsgateway-api
+	@docker compose up -d eventsgateway-api --wait
 
 setup:
-	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
+	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.19.1
 	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
 	@go mod tidy
 	@cd .git/hooks && ln -sf ./hooks/pre-commit.sh pre-commit
 
-setup-ci:
-	@go install github.com/mattn/goveralls@v0.0.11
-	@go install github.com/onsi/ginkgo/v2/ginkgo@v2.1.4
-	@go install github.com/wadey/gocovmerge@v0.0.0-20160331181800-b5bfa59ec0ad
-	@go mod tidy
+# Run all CI commands inside a single Make target to make easier debugging.
+test-ci:
+	@docker build -t eventsgateway-client-dev -f dev.Dockerfile .
+	@docker build -t eventsgateway-server -f server/Dockerfile server
+	@docker compose -f docker-compose-ci.yaml up -d eventsgateway-api --wait
+	@docker run -i --network eventsgateway_eventsgateway eventsgateway-client-dev sh -c 'make test-go'
 
 test-go: unit integration test-coverage-func
 
