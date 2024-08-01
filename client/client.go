@@ -81,7 +81,9 @@ func New(
 	})
 	var err error
 
-	err = c.configureOTel()
+	if c.config.GetBool("otlp.enabled") {
+		err = c.configureOTel()
+	}
 
 	if err != nil {
 		return nil, err
@@ -136,7 +138,7 @@ func (c *Client) newGRPCClient(
 func (c *Client) configureOTel() error {
 	traceExporter, err := otlptracegrpc.New(
 		context.Background(),
-		otlptracegrpc.WithEndpoint("localhost:4317"),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", c.config.GetString("otlp.jaegerHost"), c.config.GetInt("otlp.jaegerPort"))),
 		otlptracegrpc.WithInsecure())
 
 	if err != nil {
@@ -151,10 +153,18 @@ func (c *Client) configureOTel() error {
 		tracesdk.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
-				semconv.ServiceNameKey.String("eventsgateway-client"),
+				semconv.ServiceNameKey.String(c.config.GetString("otlp.serviceName")),
 			),
 		),
-		tracesdk.WithSampler(tracesdk.TraceIDRatioBased(1.0)),
+		tracesdk.WithSampler(
+			tracesdk.ParentBased(
+				tracesdk.TraceIDRatioBased(
+					c.config.GetFloat64("otlp.traceSamplingRatio")),
+				tracesdk.WithRemoteParentSampled(tracesdk.AlwaysSample()),
+				tracesdk.WithRemoteParentNotSampled(tracesdk.NeverSample()),
+				tracesdk.WithLocalParentSampled(tracesdk.AlwaysSample()),
+				tracesdk.WithLocalParentNotSampled(tracesdk.NeverSample())),
+		),
 	)
 	otel.SetTracerProvider(traceProvider)
 

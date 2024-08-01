@@ -139,7 +139,7 @@ func (a *App) configureOTel() error {
 		tracesdk.WithSampler(
 			tracesdk.ParentBased(
 				tracesdk.TraceIDRatioBased(
-					a.config.GetFloat64("otlp.traceRatio")),
+					a.config.GetFloat64("otlp.traceSamplingRatio")),
 				tracesdk.WithRemoteParentSampled(tracesdk.AlwaysSample()),
 				tracesdk.WithRemoteParentNotSampled(tracesdk.NeverSample()),
 				tracesdk.WithLocalParentSampled(tracesdk.AlwaysSample()),

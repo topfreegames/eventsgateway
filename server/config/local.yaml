@@ -30,7 +30,7 @@ pprof:
 otlp:
   enabled: true
   serviceName: "eventsgateway-server"
-  traceRatio: 0.2
+  traceSamplingRatio: 0.2
   jaegerHost: jaeger
   jaegerPort: 4317
 prometheus:

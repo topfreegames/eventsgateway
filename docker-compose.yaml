@@ -38,6 +38,7 @@ services:
       - ./spark-notebook/work:/home/jovyan/work
     networks:
       - eventsgateway
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     environment:

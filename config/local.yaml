@@ -19,7 +19,13 @@ client:
     serverAddress: localhost:5000 #eventsgateway-api:5000
     timeout: 500ms
 loadtestclient:
-  duration: 10s
-  threads: 15
+  duration: 20s
+  threads: 20
   randSleepCeilingMs: 500
-  randPropsSize: medium # small, medium, large, jumbo
+  randPropsSize: small # small, medium, large, jumbo
+otlp:
+  enabled: true
+  serviceName: "eventsgateway-client"
+  traceSamplingRatio: 0.2
+  jaegerHost: localhost
+  jaegerPort: 4317
