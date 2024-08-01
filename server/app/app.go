@@ -133,11 +133,10 @@ func (a *App) configureOTel() error {
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
 				semconv.ServiceName(a.config.GetString("otlp.serviceName")),
-				attribute.String("clustername", a.config.GetString("server.k8sClusterName")),
 				attribute.String("environment", a.config.GetString("server.environment")),
 			),
 		),
-		tracesdk.WithSampler(tracesdk.TraceIDRatioBased(a.config.GetFloat64("otlp.traceRatio"))),
+		tracesdk.WithSampler(tracesdk.ParentBased(tracesdk.TraceIDRatioBased(a.config.GetFloat64("otlp.traceRatio")))),
 	)
 
 	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})

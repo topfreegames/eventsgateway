@@ -23,7 +23,6 @@ server:
   maxConnectionAgeGrace: 5s
   Time: 10s
   Timeout: 500ms
-  k8sClusterName: local
   environment: development
 pprof:
   enabled: true
