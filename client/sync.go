@@ -10,15 +10,10 @@ package client
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	"google.golang.org/grpc/metadata"
+	"reflect"
 	"time"
+	"unsafe"
 
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
@@ -75,63 +70,24 @@ func (s *gRPCClientSync) configureGRPCForwarderClient(
 	s.logger.WithFields(map[string]interface{}{
 		"operation": "configureGRPCForwarderClient",
 	}).Info("connecting to grpc server")
-	//tracer := opentracing.GlobalTracer()
-	err := s.configureOTel()
-	otelPropagator := otelgrpc.WithPropagators(otel.GetTextMapPropagator())
-	otelTracerProvider := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
 
 	dialOpts := append(
 		[]grpc.DialOption{
 			grpc.WithInsecure(),
 			grpc.WithChainUnaryInterceptor(
-				otelgrpc.UnaryClientInterceptor(otelPropagator, otelTracerProvider),
 				s.metricsReporterInterceptor,
 			),
 		},
 		opts...,
 	)
+
 	conn, err := grpc.Dial(serverAddress, dialOpts...)
+
 	if err != nil {
 		return err
 	}
 	s.conn = conn
 	s.client = pb.NewGRPCForwarderClient(conn)
-	return nil
-}
-
-//OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-//OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4317
-
-func (s *gRPCClientSync) configureOTel() error {
-	md := metadata.Pairs(
-		"test1", "value1",
-		"test2", "value2",
-	)
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	traceExporter, err := otlptracegrpc.New(
-		ctx,
-		otlptracegrpc.WithEndpoint("localhost:4317"),
-		otlptracegrpc.WithInsecure())
-
-	if err != nil {
-		s.logger.Error("Unable to create a OTL exporter", err)
-		return err
-	}
-
-	traceResources := resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceNameKey.String("events-gateway-client"),
-	)
-
-	traceProvider := tracesdk.NewTracerProvider(
-		tracesdk.WithBatcher(traceExporter),
-		tracesdk.WithResource(traceResources),
-	)
-	otel.SetTracerProvider(traceProvider)
-
-	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
-	otel.SetTextMapPropagator(propagator)
-
 	return nil
 }
 
@@ -182,8 +138,38 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 	return nil
 }
 
+func printContextInternals(ctx interface{}, inner bool) {
+	contextValues := reflect.ValueOf(ctx).Elem()
+	contextKeys := reflect.TypeOf(ctx).Elem()
+
+	if !inner {
+		fmt.Printf("\nFields for %s.%s\n", contextKeys.PkgPath(), contextKeys.Name())
+	}
+
+	if contextKeys.Kind() == reflect.Struct {
+		for i := 0; i < contextValues.NumField(); i++ {
+			reflectValue := contextValues.Field(i)
+			reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
+
+			reflectField := contextKeys.Field(i)
+
+			if reflectField.Name == "Context" {
+				printContextInternals(reflectValue.Interface(), true)
+			} else {
+				fmt.Printf("field name: %+v\n", reflectField.Name)
+				fmt.Printf("value: %+v\n", reflectValue.Interface())
+			}
+		}
+	} else {
+		fmt.Printf("context is empty (int)\n")
+	}
+}
+
 func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, s.timeout)
+	childCtx, span := otel.Tracer("client.sync").Start(ctx, "client.sync.send")
+	defer span.End()
+	//printContextInternals(ctx, true)
+	ctxWithTimeout, cancel := context.WithTimeout(childCtx, s.timeout)
 	defer cancel()
 	_, err := s.client.SendEvent(ctxWithTimeout, event)
 	return err

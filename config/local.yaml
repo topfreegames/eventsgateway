@@ -1,3 +1,4 @@
+# Those properties can also be loaded as ENV Vars with EVENTSGATEWAY_ prefix.
 kafka:
   logger:
     enabled: true
@@ -18,7 +19,7 @@ client:
     serverAddress: localhost:5000 #eventsgateway-api:5000
     timeout: 500ms
 loadtestclient:
-  duration: 10s
-  threads: 15
+  duration: 1s
+  threads: 1
   randSleepCeilingMs: 500
-  randPropsSize: large # small, medium, large, jumbo
+  randPropsSize: small # small, medium, large, jumbo

@@ -14,8 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
-	"github.com/opentracing/opentracing-go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
@@ -114,12 +112,10 @@ func (a *gRPCClientAsync) configureGRPCForwarderClient(
 	a.logger.WithFields(map[string]interface{}{
 		"operation": "configureGRPCForwarderClient",
 	}).Info("connecting to grpc server")
-	tracer := opentracing.GlobalTracer()
 	dialOpts := append(
 		[]grpc.DialOption{
 			grpc.WithInsecure(),
 			grpc.WithChainUnaryInterceptor(
-				otgrpc.OpenTracingClientInterceptor(tracer),
 				a.metricsReporterInterceptor,
 			),
 		},

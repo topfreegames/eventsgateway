@@ -78,7 +78,7 @@ services:
     command:
       - sh
       - -c
-      - 'go run main.go start -d'
+      - 'go run main.go start'
     networks:
       - eventsgateway
 
