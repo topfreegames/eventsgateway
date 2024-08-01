@@ -19,7 +19,7 @@ client:
     serverAddress: localhost:5000 #eventsgateway-api:5000
     timeout: 500ms
 loadtestclient:
-  duration: 1s
-  threads: 1
+  duration: 10s
+  threads: 15
   randSleepCeilingMs: 500
-  randPropsSize: small # small, medium, large, jumbo
+  randPropsSize: medium # small, medium, large, jumbo
