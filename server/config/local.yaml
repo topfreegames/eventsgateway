@@ -28,9 +28,9 @@ pprof:
   enabled: true
   address: localhost:6060
 otlp:
-  enabled: false
+  enabled: true
   serviceName: "eventsgateway-server"
-  traceRatio: 1.0 #Sends 50% of the traces to jaeger
+  traceRatio: 0.2
   jaegerHost: jaeger
   jaegerPort: 4317
 prometheus:

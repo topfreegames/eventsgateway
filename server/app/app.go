@@ -136,7 +136,14 @@ func (a *App) configureOTel() error {
 				attribute.String("environment", a.config.GetString("server.environment")),
 			),
 		),
-		tracesdk.WithSampler(tracesdk.ParentBased(tracesdk.TraceIDRatioBased(a.config.GetFloat64("otlp.traceRatio")))),
+		tracesdk.WithSampler(
+			tracesdk.ParentBased(
+				tracesdk.TraceIDRatioBased(
+					a.config.GetFloat64("otlp.traceRatio")),
+				tracesdk.WithRemoteParentSampled(tracesdk.AlwaysSample()),
+				tracesdk.WithRemoteParentNotSampled(tracesdk.NeverSample()),
+				tracesdk.WithLocalParentSampled(tracesdk.AlwaysSample()),
+				tracesdk.WithLocalParentNotSampled(tracesdk.NeverSample()))),
 	)
 
 	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
