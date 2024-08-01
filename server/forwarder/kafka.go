@@ -57,6 +57,7 @@ func NewKafkaForwarder(config *viper.Viper) (*KafkaForwarder, error) {
 
 func (k KafkaForwarder) Produce(ctx context.Context, topic string, message []byte) (int32, int64, error) {
 	_, span := otel.Tracer("forwarder.kafka").Start(ctx, "forwarder.kafka.Produce")
+	defer span.End()
 
 	prefixedTopic := fmt.Sprintf("%s%s", k.topicPrefix, topic)
 	kafkaMsg := &sarama.ProducerMessage{
@@ -65,6 +66,5 @@ func (k KafkaForwarder) Produce(ctx context.Context, topic string, message []byt
 	}
 
 	partition, offset, err := k.producer.SendMessage(kafkaMsg)
-	defer span.End()
 	return partition, offset, err
 }

@@ -50,10 +50,10 @@ func (s *Server) SendEvent(
 	req *pb.Event,
 ) (*pb.SendEventResponse, error) {
 	_, span := otel.Tracer("app.server").Start(ctx, "app.server.SendEvent")
+	defer span.End()
 	if err := s.sender.SendEvent(ctx, req); err != nil {
 		return nil, err
 	}
-	defer span.End()
 	return &pb.SendEventResponse{}, nil
 }
 

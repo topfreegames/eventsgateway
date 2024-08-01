@@ -70,6 +70,7 @@ func (k *KafkaSender) SendEvent(
 	event *pb.Event,
 ) error {
 	_, span := otel.Tracer("sender.kafka").Start(ctx, "sender.kafka.SendEvent")
+	defer span.End()
 
 	l := k.logger.WithFields(map[string]interface{}{
 		"topic": event.GetTopic(),
@@ -122,6 +123,6 @@ func (k *KafkaSender) SendEvent(
 		"partition": partition,
 		"offset":    offset,
 	}).Debug("event sent to kafka")
-	span.End()
+
 	return nil
 }
