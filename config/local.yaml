@@ -22,7 +22,7 @@ loadtestclient:
   duration: 20s
   threads: 20
   randSleepCeilingMs: 500
-  randPropsSize: small # small, medium, large, jumbo
+  randPropsSize: large # small, medium, large, jumbo
 otlp:
   enabled: true
   serviceName: "eventsgateway-client"

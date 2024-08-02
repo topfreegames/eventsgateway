@@ -227,15 +227,13 @@ func (c *Client) SendToTopic(
 	props map[string]string,
 	topic string,
 ) error {
-	childCtx, span := otel.Tracer("client").Start(ctx, "client.sendToTopic")
-	defer span.End()
 	l := c.logger.WithFields(map[string]interface{}{
 		"operation": "sendToTopic",
 		"event":     name,
 		"topic":     topic,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(childCtx, buildEvent(name, props, topic, time.Now())); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, topic, time.Now())); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
@@ -249,15 +247,13 @@ func (c *Client) SendAtTime(
 	props map[string]string,
 	time time.Time,
 ) error {
-	childCtx, span := otel.Tracer("client").Start(ctx, "client.sendAtTime")
-	defer span.End()
 	l := c.logger.WithFields(logrus.Fields{
 		"operation": "sendAtTime",
 		"event":     name,
 		"time":      time,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(childCtx, buildEvent(name, props, c.topic, time)); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, c.topic, time)); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
