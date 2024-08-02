@@ -10,16 +10,12 @@ package client
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel"
-	"reflect"
-	"time"
-	"unsafe"
-
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
+	"time"
 )
 
 type gRPCClientSync struct {
@@ -138,38 +134,8 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 	return nil
 }
 
-func printContextInternals(ctx interface{}, inner bool) {
-	contextValues := reflect.ValueOf(ctx).Elem()
-	contextKeys := reflect.TypeOf(ctx).Elem()
-
-	if !inner {
-		fmt.Printf("\nFields for %s.%s\n", contextKeys.PkgPath(), contextKeys.Name())
-	}
-
-	if contextKeys.Kind() == reflect.Struct {
-		for i := 0; i < contextValues.NumField(); i++ {
-			reflectValue := contextValues.Field(i)
-			reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
-
-			reflectField := contextKeys.Field(i)
-
-			if reflectField.Name == "Context" {
-				printContextInternals(reflectValue.Interface(), true)
-			} else {
-				fmt.Printf("field name: %+v\n", reflectField.Name)
-				fmt.Printf("value: %+v\n", reflectValue.Interface())
-			}
-		}
-	} else {
-		fmt.Printf("context is empty (int)\n")
-	}
-}
-
 func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
-	childCtx, span := otel.Tracer("client.sync").Start(ctx, "client.sync.send")
-	defer span.End()
-	//printContextInternals(ctx, true)
-	ctxWithTimeout, cancel := context.WithTimeout(childCtx, s.timeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 	_, err := s.client.SendEvent(ctxWithTimeout, event)
 	return err

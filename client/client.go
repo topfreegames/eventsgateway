@@ -208,14 +208,12 @@ func (c *Client) Send(
 	name string,
 	props map[string]string,
 ) error {
-	childCtx, span := otel.Tracer("client").Start(ctx, "client.Send")
-	defer span.End()
 	l := c.logger.WithFields(map[string]interface{}{
 		"operation": "send",
 		"event":     name,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(childCtx, buildEvent(name, props, c.topic, time.Now())); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, c.topic, time.Now())); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
