@@ -28,6 +28,7 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/server/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Server struct
@@ -63,6 +64,9 @@ func (s *Server) SendEvents(
 	ctx context.Context,
 	req *pb.SendEventsRequest,
 ) (*pb.SendEventsResponse, error) {
+	_, span := otel.Tracer("app.server").Start(ctx, "app.server.SendEvents")
+	span.SetAttributes(attribute.Key("nEvents").Int(len(req.Events)))
+	defer span.End()
 	failureIndexes := s.sender.SendEvents(ctx, req.Events)
 	return &pb.SendEventsResponse{FailureIndexes: failureIndexes}, nil
 }
