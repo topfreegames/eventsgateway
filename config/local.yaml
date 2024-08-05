@@ -27,11 +27,11 @@ tracing:
   enabled: true
   environment: development
   maxTagValueLength: 2500
-  serviceNamePrefix: eventsgateway-client-opentracing
+  serviceNamePrefix: eventsgateway-client
   logSpans: false
   jaeger:
     host: localhost
     port: 6831
-    samplerType: probabilistic #const
-    samplerParam: 0.2 #1.0
+    samplerType: const #probabilistic
+    samplerParam: 1.0 #0.1
 

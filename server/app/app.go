@@ -26,29 +26,23 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/topfreegames/eventsgateway/v4/server/forwarder"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
-	"net"
-	"time"
-
+	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
+	"github.com/opentracing/opentracing-go"
 	goMetrics "github.com/rcrowley/go-metrics"
+	"github.com/spf13/viper"
+	"github.com/topfreegames/eventsgateway/v4/server/forwarder"
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
 	"github.com/topfreegames/eventsgateway/v4/server/metrics"
 	"github.com/topfreegames/eventsgateway/v4/server/sender"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/sdk/resource"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
+	jaegerclient "github.com/uber/jaeger-client-go"
+	jaegercfg "github.com/uber/jaeger-client-go/config"
+	"io"
+	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-
-	"github.com/spf13/viper"
-	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 
 // App is the app structure
@@ -101,12 +95,6 @@ func (a *App) loadConfigurationDefaults() {
 func (a *App) configure() error {
 	a.loadConfigurationDefaults()
 
-	if a.config.GetBool("otlp.enabled") {
-		if err := a.configureOTel(); err != nil {
-			return err
-		}
-	}
-
 	err := a.configureEventsForwarder()
 	if err != nil {
 		return err
@@ -114,43 +102,31 @@ func (a *App) configure() error {
 	return nil
 }
 
-func (a *App) configureOTel() error {
-	traceExporter, err := otlptracegrpc.New(
-		context.Background(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", a.config.GetString("otlp.jaegerHost"), a.config.GetInt("otlp.jaegerPort"))),
-		otlptracegrpc.WithInsecure())
+func (a *App) configureOpenTracing() (io.Closer, error) {
+	// InitTracer initializes a tracer using the Config instance's parameters
 
-	if err != nil {
-		a.log.Error("Unable to create a OTL exporter", err)
-		return err
+	jcfg := jaegercfg.Configuration{
+		ServiceName: a.config.GetString("tracing.serviceName"),
+		Sampler: &jaegercfg.SamplerConfig{
+			Type:  a.config.GetString("tracing.jaeger.samplerType"),
+			Param: a.config.GetFloat64("tracing.jaeger.samplerParam"),
+		},
+		Reporter: &jaegercfg.ReporterConfig{
+			LocalAgentHostPort: fmt.Sprintf("%s:%d", a.config.GetString("tracing.jaeger.host"), a.config.GetInt("tracing.jaeger.port")),
+			LogSpans:           a.config.GetBool("tracing.logSpans"),
+		},
+		Disabled: !a.config.GetBool("tracing.enabled"),
 	}
 
-	traceProvider := tracesdk.NewTracerProvider(
-		// Always be sure to batch in production.
-		tracesdk.WithBatcher(traceExporter),
-		// Record information about this application in a Resource.
-		tracesdk.WithResource(
-			resource.NewWithAttributes(
-				semconv.SchemaURL,
-				semconv.ServiceName(a.config.GetString("otlp.serviceName")),
-				attribute.String("environment", a.config.GetString("server.environment")),
-			),
-		),
-		tracesdk.WithSampler(
-			tracesdk.ParentBased(
-				tracesdk.TraceIDRatioBased(
-					a.config.GetFloat64("otlp.traceSamplingRatio")),
-				tracesdk.WithRemoteParentSampled(tracesdk.AlwaysSample()),
-				tracesdk.WithRemoteParentNotSampled(tracesdk.NeverSample()),
-				tracesdk.WithLocalParentSampled(tracesdk.AlwaysSample()),
-				tracesdk.WithLocalParentNotSampled(tracesdk.NeverSample()))),
-	)
-
-	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
-	otel.SetTextMapPropagator(propagator)
-	otel.SetTracerProvider(traceProvider)
-
-	return nil
+	tracer, closer, err := jcfg.NewTracer(
+		jaegercfg.Logger(jaegerclient.StdLogger),
+		jaegercfg.MaxTagValueLength(a.config.GetInt("tracing.maxTagValueLength")),
+		jaegercfg.Tag("environment", a.config.GetString("tracing.environment")))
+	if err != nil {
+		return nil, err
+	}
+	opentracing.SetGlobalTracer(tracer)
+	return closer, nil
 }
 
 func (a *App) configureEventsForwarder() error {
@@ -261,13 +237,28 @@ func (a *App) Run() {
 	metrics.StartServer(a.config)
 	var opts []grpc.ServerOption
 
-	otelPropagator := otelgrpc.WithPropagators(otel.GetTextMapPropagator())
-	otelTracerProvider := otelgrpc.WithTracerProvider(otel.GetTracerProvider())
+	if a.config.GetBool("tracing.enabled") {
+		tracerCloser, err := a.configureOpenTracing()
+		if err != nil {
+			log.Panic(err.Error())
+		}
+		defer func() {
+			err := tracerCloser.Close()
+			log.Info("Closing SERVER tracer ------------------------------------------------------")
+			if err != nil {
+				log.Error(err.Error())
+			}
+		}()
+
+	}
 
 	opts = append(
 		opts,
 		grpc.UnaryInterceptor(a.metricsReporterInterceptor),
-		grpc.StatsHandler(otelgrpc.NewServerHandler(otelPropagator, otelTracerProvider)),
+		grpc.ChainUnaryInterceptor(
+			a.metricsReporterInterceptor,
+			otgrpc.OpenTracingServerInterceptor(opentracing.GlobalTracer()),
+		),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     a.config.GetDuration("server.maxConnectionIdle"),
 			MaxConnectionAge:      a.config.GetDuration("server.maxConnectionAge"),

@@ -24,11 +24,10 @@ package app
 
 import (
 	"context"
+	"github.com/opentracing/opentracing-go"
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
 	"github.com/topfreegames/eventsgateway/v4/server/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // Server struct
@@ -50,9 +49,9 @@ func (s *Server) SendEvent(
 	ctx context.Context,
 	req *pb.Event,
 ) (*pb.SendEventResponse, error) {
-	_, span := otel.Tracer("app.server").Start(ctx, "app.server.SendEvent")
-	defer span.End()
-	if err := s.sender.SendEvent(ctx, req); err != nil {
+	span, childCtx := opentracing.StartSpanFromContext(ctx, "app.server.SendEvent")
+	defer span.Finish()
+	if err := s.sender.SendEvent(childCtx, req); err != nil {
 		return nil, err
 	}
 	return &pb.SendEventResponse{}, nil
@@ -64,9 +63,10 @@ func (s *Server) SendEvents(
 	ctx context.Context,
 	req *pb.SendEventsRequest,
 ) (*pb.SendEventsResponse, error) {
-	_, span := otel.Tracer("app.server").Start(ctx, "app.server.SendEvents")
-	span.SetAttributes(attribute.Key("nEvents").Int(len(req.Events)))
-	defer span.End()
-	failureIndexes := s.sender.SendEvents(ctx, req.Events)
+	span, childCtx := opentracing.StartSpanFromContext(ctx, "app.server.SendEvents")
+	span.SetTag("eventCount", len(req.Events))
+	defer span.Finish()
+
+	failureIndexes := s.sender.SendEvents(childCtx, req.Events)
 	return &pb.SendEventsResponse{FailureIndexes: failureIndexes}, nil
 }
