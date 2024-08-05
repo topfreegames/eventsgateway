@@ -24,6 +24,10 @@ package tools
 
 import (
 	"fmt"
+	"github.com/opentracing/opentracing-go"
+	jaegerclient "github.com/uber/jaeger-client-go"
+	jaegercfg "github.com/uber/jaeger-client-go/config"
+	"io"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -36,12 +40,41 @@ import (
 
 // LoadTest holds runners clients
 type LoadTest struct {
-	config   *viper.Viper
-	duration time.Duration
-	log      logger.Logger
-	threads  int
-	runners  []*runner
-	wg       sync.WaitGroup
+	config       *viper.Viper
+	duration     time.Duration
+	log          logger.Logger
+	threads      int
+	runners      []*runner
+	wg           sync.WaitGroup
+	tracerCloser io.Closer
+}
+
+func (lt *LoadTest) configureOpenTracing(appName string) (io.Closer, error) {
+	// InitTracer initializes a tracer using the Config instance's parameters
+	lt.log.Infof("Configuring Opentracing %s.", appName)
+
+	jcfg := jaegercfg.Configuration{
+		ServiceName: fmt.Sprintf("%s-%s", lt.config.GetString("tracing.serviceNamePrefix"), appName),
+		Sampler: &jaegercfg.SamplerConfig{
+			Type:  lt.config.GetString("tracing.jaeger.samplerType"),
+			Param: lt.config.GetFloat64("tracing.jaeger.samplerParam"),
+		},
+		Reporter: &jaegercfg.ReporterConfig{
+			LocalAgentHostPort: fmt.Sprintf("%s:%d", lt.config.GetString("tracing.jaeger.host"), lt.config.GetInt("tracing.jaeger.port")),
+			LogSpans:           lt.config.GetBool("tracing.logSpans"),
+		},
+		Disabled: !lt.config.GetBool("tracing.enabled"),
+	}
+
+	tracer, closer, err := jcfg.NewTracer(
+		jaegercfg.Logger(jaegerclient.StdLogger),
+		jaegercfg.MaxTagValueLength(lt.config.GetInt("tracing.maxTagValueLength")),
+		jaegercfg.Tag("environment", lt.config.GetString("tracing.environment")))
+	if err != nil {
+		return nil, err
+	}
+	opentracing.SetGlobalTracer(tracer)
+	return closer, nil
 }
 
 // NewLoadTest ctor
@@ -56,6 +89,14 @@ func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
 	lt.config.SetDefault("loadtestclient.threads", 2)
 	lt.threads = lt.config.GetInt("loadtestclient.threads")
 	lt.runners = make([]*runner, lt.threads)
+
+	tracerCloser, err := lt.configureOpenTracing("loadtest")
+
+	lt.tracerCloser = tracerCloser
+	if err != nil {
+		lt.log.Panic(err.Error())
+		panic(err)
+	}
 	for i := 0; i < lt.threads; i++ {
 		runner, err := newRunner(log, config)
 		if err != nil {
@@ -81,4 +122,5 @@ func (lt *LoadTest) Run() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
+	_ = lt.tracerCloser.Close()
 }

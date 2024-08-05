@@ -53,6 +53,10 @@ func newRunner(
 		config: config,
 	}
 	err := r.configure()
+	if err != nil {
+		return nil, err
+	}
+
 	return r, err
 }
 
@@ -81,9 +85,9 @@ func (r *runner) run() {
 			props := buildProps(r.randPropsSize)
 			time.Sleep(time.Duration(rand.Intn(r.randSleepCeilingMs)) * time.Millisecond)
 			if rand.Intn(2) == 0 {
-				r.client.Send(ctx, "load test event", props)
+				_ = r.client.Send(ctx, "load test event", props)
 			} else {
-				r.client.SendToTopic(ctx, "load test event", props, randomTopic())
+				_ = r.client.SendToTopic(ctx, "load test event", props, randomTopic())
 			}
 			r.sentCounter++
 		case <-stop:

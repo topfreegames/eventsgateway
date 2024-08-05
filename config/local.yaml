@@ -32,6 +32,6 @@ tracing:
   jaeger:
     host: localhost
     port: 6831
-    samplerType: const #probabilistic
-    samplerParam: 1.0 #0.1
+    samplerType: probabilistic
+    samplerParam: 0.1
 

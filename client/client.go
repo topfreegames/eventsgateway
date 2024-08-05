@@ -81,6 +81,9 @@ func New(
 	var err error
 
 	isOpenTracingParentNotConfigured := reflect.TypeOf(opentracing.GlobalTracer()) == reflect.TypeOf(opentracing.NoopTracer{})
+	if !isOpenTracingParentNotConfigured {
+		c.logger.Info("No need to configure opentracing. Parent already configured")
+	}
 	if c.config.GetBool("tracing.enabled") && isOpenTracingParentNotConfigured {
 		_, err = c.configureOpenTracing("standalone")
 	}
@@ -128,6 +131,7 @@ func (c *Client) newGRPCClient(
 
 func (c *Client) configureOpenTracing(appName string) (io.Closer, error) {
 	// InitTracer initializes a tracer using the Config instance's parameters
+	c.logger.Info("Configuring Opentracing Standalone...")
 
 	jcfg := jaegercfg.Configuration{
 		ServiceName: fmt.Sprintf("%s-%s", c.config.GetString("tracing.serviceNamePrefix"), appName),
