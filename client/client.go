@@ -81,9 +81,7 @@ func New(
 	var err error
 
 	isOpenTracingParentNotConfigured := reflect.TypeOf(opentracing.GlobalTracer()) == reflect.TypeOf(opentracing.NoopTracer{})
-	if !isOpenTracingParentNotConfigured {
-		c.logger.Info("No need to configure opentracing. Parent already configured")
-	}
+
 	if c.config.GetBool("tracing.enabled") && isOpenTracingParentNotConfigured {
 		_, err = c.configureOpenTracing("standalone")
 	}
