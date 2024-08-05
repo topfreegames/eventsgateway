@@ -69,6 +69,7 @@ func initConfig() {
 		config.SetConfigFile(cfgFile)
 	}
 
+	config.SetDefault("debug.enabled", debug)
 	config.SetConfigType("yaml")
 	config.SetEnvPrefix("eventsgateway")
 	config.AddConfigPath(".")

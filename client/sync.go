@@ -14,6 +14,7 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/logger"
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"time"
 )
@@ -135,7 +136,9 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 }
 
 func (s *gRPCClientSync) send(ctx context.Context, event *pb.Event) error {
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, s.timeout)
+	childContext, span := otel.Tracer("client.sync").Start(ctx, "client.sync.send")
+	defer span.End()
+	ctxWithTimeout, cancel := context.WithTimeout(childContext, s.timeout)
 	defer cancel()
 	_, err := s.client.SendEvent(ctxWithTimeout, event)
 	return err
