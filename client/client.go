@@ -14,11 +14,6 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv/v1.7.0"
 	"strings"
 	"sync"
 	"time"
@@ -81,14 +76,6 @@ func New(
 	})
 	var err error
 
-	if c.config.GetBool("otlp.enabled") {
-		err = c.configureOTel()
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
 	dialOpts := append(
 		[]grpc.DialOption{
 			grpc.WithChainUnaryInterceptor(
@@ -132,48 +119,6 @@ func (c *Client) newGRPCClient(
 	return newGRPCClientSync(configPrefix, c.config, c.logger, c.serverAddress, client, opts...)
 }
 
-//OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-//OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4317
-
-func (c *Client) configureOTel() error {
-	traceExporter, err := otlptracegrpc.New(
-		context.Background(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", c.config.GetString("otlp.jaegerHost"), c.config.GetInt("otlp.jaegerPort"))),
-		otlptracegrpc.WithInsecure())
-
-	if err != nil {
-		c.logger.Error("Unable to create a OTL exporter", err)
-		return err
-	}
-
-	traceProvider := tracesdk.NewTracerProvider(
-		// Always be sure to batch in production.
-		tracesdk.WithBatcher(traceExporter),
-		// Record information about this application in a Resource.
-		tracesdk.WithResource(
-			resource.NewWithAttributes(
-				semconv.SchemaURL,
-				semconv.ServiceNameKey.String(c.config.GetString("otlp.serviceName")),
-			),
-		),
-		tracesdk.WithSampler(
-			tracesdk.ParentBased(
-				tracesdk.TraceIDRatioBased(
-					c.config.GetFloat64("otlp.traceSamplingRatio")),
-				tracesdk.WithRemoteParentSampled(tracesdk.AlwaysSample()),
-				tracesdk.WithRemoteParentNotSampled(tracesdk.NeverSample()),
-				tracesdk.WithLocalParentSampled(tracesdk.AlwaysSample()),
-				tracesdk.WithLocalParentNotSampled(tracesdk.NeverSample())),
-		),
-	)
-	otel.SetTracerProvider(traceProvider)
-
-	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
-	otel.SetTextMapPropagator(propagator)
-
-	return nil
-}
-
 func (c *Client) registerMetrics(configPrefix string) {
 	latencyBucketsConf := fmt.Sprintf("%sclient.prometheus.buckets.latency", configPrefix)
 	c.config.SetDefault(latencyBucketsConf, []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000})
@@ -208,14 +153,12 @@ func (c *Client) Send(
 	name string,
 	props map[string]string,
 ) error {
-	childCtx, span := otel.Tracer("client").Start(ctx, "client.Send")
-	defer span.End()
 	l := c.logger.WithFields(map[string]interface{}{
 		"operation": "send",
 		"event":     name,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(childCtx, buildEvent(name, props, c.topic, time.Now())); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, c.topic, time.Now())); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
@@ -229,15 +172,13 @@ func (c *Client) SendToTopic(
 	props map[string]string,
 	topic string,
 ) error {
-	childCtx, span := otel.Tracer("client").Start(ctx, "client.sendToTopic")
-	defer span.End()
 	l := c.logger.WithFields(map[string]interface{}{
 		"operation": "sendToTopic",
 		"event":     name,
 		"topic":     topic,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(childCtx, buildEvent(name, props, topic, time.Now())); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, topic, time.Now())); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
@@ -251,15 +192,13 @@ func (c *Client) SendAtTime(
 	props map[string]string,
 	time time.Time,
 ) error {
-	childCtx, span := otel.Tracer("client").Start(ctx, "client.sendAtTime")
-	defer span.End()
 	l := c.logger.WithFields(logrus.Fields{
 		"operation": "sendAtTime",
 		"event":     name,
 		"time":      time,
 	})
 	l.Debug("sending event")
-	if err := c.client.send(childCtx, buildEvent(name, props, c.topic, time)); err != nil {
+	if err := c.client.send(ctx, buildEvent(name, props, c.topic, time)); err != nil {
 		l.WithError(err).Error("send event failed")
 		return err
 	}
