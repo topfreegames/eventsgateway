@@ -18,6 +18,7 @@ require (
 	github.com/topfreegames/avro v1.0.2
 	github.com/topfreegames/protos v1.6.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.53.0
+	go.opentelemetry.io/contrib/propagators/jaeger v1.28.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/sdk v1.28.0
 	google.golang.org/grpc v1.65.0

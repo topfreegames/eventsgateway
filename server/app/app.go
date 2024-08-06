@@ -28,6 +28,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/topfreegames/eventsgateway/v4/server/forwarder"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	jaegerPropagator "go.opentelemetry.io/contrib/propagators/jaeger"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -146,8 +147,12 @@ func (a *App) configureOTel() error {
 				tracesdk.WithLocalParentNotSampled(tracesdk.NeverSample()))),
 	)
 
-	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
-	otel.SetTextMapPropagator(propagator)
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			jaegerPropagator.Jaeger{},
+			propagation.TraceContext{},
+			propagation.Baggage{}),
+	)
 	otel.SetTracerProvider(traceProvider)
 
 	return nil
