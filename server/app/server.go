@@ -27,7 +27,6 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
 	"github.com/topfreegames/eventsgateway/v4/server/sender"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
-	"go.opentelemetry.io/otel"
 )
 
 // Server struct
@@ -49,8 +48,6 @@ func (s *Server) SendEvent(
 	ctx context.Context,
 	req *pb.Event,
 ) (*pb.SendEventResponse, error) {
-	_, span := otel.Tracer("app.server").Start(ctx, "app.server.SendEvent")
-	defer span.End()
 	if err := s.sender.SendEvent(ctx, req); err != nil {
 		return nil, err
 	}
