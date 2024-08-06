@@ -23,9 +23,17 @@ loadtestclient:
   threads: 20
   randSleepCeilingMs: 500
   randPropsSize: small # small, medium, large, jumbo
-otlp:
-  enabled: true
-  serviceName: "eventsgateway-client"
-  traceSamplingRatio: 0.2
-  jaegerHost: localhost
-  jaegerPort: 4317
+  opentelemetry:
+    enabled: false
+    serviceName: "eventsgateway-client-loadtest-opentelemetry"
+    traceSamplingRatio: 1.0
+    jaegerHost: localhost
+    jaegerPort: 4317
+  opentracing:
+    enabled: true
+    serviceName: "eventsgateway-client-loadtest-opentracing"
+    jaegerHost: localhost
+    jaegerPort: 6831
+    samplerType: const
+    samplerParam: 1.0
+    logSpans: false

@@ -25,12 +25,16 @@ package tools
 import (
 	"context"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
+	jaegerclient "github.com/uber/jaeger-client-go"
+	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"io"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -63,7 +67,13 @@ func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
 
 	lt.duration = lt.config.GetDuration("loadtestclient.duration")
 	lt.threads = lt.config.GetInt("loadtestclient.threads")
-	err := lt.configureOTel()
+
+	var err error
+	if lt.config.GetBool("loadtestclient.opentelemetry.enabled") {
+		err = lt.configureOpenTelemetry()
+	} else if lt.config.GetBool("loadtestclient.opentracing.enabled") {
+		_, err = lt.configureOpenTracing()
+	}
 
 	if err != nil {
 		return nil, err
@@ -80,10 +90,35 @@ func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
 	return lt, nil
 }
 
-func (lt *LoadTest) configureOTel() error {
+func (lt *LoadTest) configureOpenTracing() (io.Closer, error) {
+	jcfg := jaegercfg.Configuration{
+		ServiceName: lt.config.GetString("loadtestclient.opentracing.serviceName"),
+		Sampler: &jaegercfg.SamplerConfig{
+			Type:  lt.config.GetString("loadtestclient.opentracing.samplerType"),
+			Param: lt.config.GetFloat64("loadtestclient.opentracing.samplerParam"),
+		},
+		Reporter: &jaegercfg.ReporterConfig{
+			LocalAgentHostPort: fmt.Sprintf("%s:%d", lt.config.GetString("loadtestclient.opentracing.jaegerHost"), lt.config.GetInt("loadtestclient.opentracing.jaegerPort")),
+			LogSpans:           lt.config.GetBool("loadtestclient.opentracing.logSpans"),
+		},
+		Disabled: !lt.config.GetBool("loadtestclient.opentracing.enabled"),
+	}
+
+	tracer, closer, err := jcfg.NewTracer(
+		jaegercfg.Logger(jaegerclient.StdLogger),
+		jaegercfg.MaxTagValueLength(2500),
+		jaegercfg.Tag("environment", "development"))
+	if err != nil {
+		return nil, err
+	}
+	opentracing.SetGlobalTracer(tracer)
+	return closer, nil
+}
+
+func (lt *LoadTest) configureOpenTelemetry() error {
 	traceExporter, err := otlptracegrpc.New(
 		context.Background(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", lt.config.GetString("otlp.jaegerHost"), lt.config.GetInt("otlp.jaegerPort"))),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", lt.config.GetString("loadtestclient.opentelemetry.jaegerHost"), lt.config.GetInt("loadtestclient.opentelemetry.jaegerPort"))),
 		otlptracegrpc.WithInsecure())
 
 	if err != nil {
@@ -98,13 +133,13 @@ func (lt *LoadTest) configureOTel() error {
 		tracesdk.WithResource(
 			resource.NewWithAttributes(
 				semconv.SchemaURL,
-				semconv.ServiceNameKey.String(lt.config.GetString("otlp.serviceName")),
+				semconv.ServiceNameKey.String(lt.config.GetString("loadtestclient.opentelemetry.serviceName")),
 			),
 		),
 		tracesdk.WithSampler(
 			tracesdk.ParentBased(
 				tracesdk.TraceIDRatioBased(
-					lt.config.GetFloat64("otlp.traceSamplingRatio")),
+					lt.config.GetFloat64("loadtestclient.opentelemetry.traceSamplingRatio")),
 				tracesdk.WithRemoteParentSampled(tracesdk.AlwaysSample()),
 				tracesdk.WithRemoteParentNotSampled(tracesdk.NeverSample()),
 				tracesdk.WithLocalParentSampled(tracesdk.AlwaysSample()),
