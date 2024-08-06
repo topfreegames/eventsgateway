@@ -23,7 +23,14 @@
 package tools
 
 import (
+	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -52,9 +59,16 @@ func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
 		config: config,
 	}
 	lt.config.SetDefault("loadtestclient.duration", "10s")
-	lt.duration = lt.config.GetDuration("loadtestclient.duration")
 	lt.config.SetDefault("loadtestclient.threads", 2)
+
+	lt.duration = lt.config.GetDuration("loadtestclient.duration")
 	lt.threads = lt.config.GetInt("loadtestclient.threads")
+	err := lt.configureOTel()
+
+	if err != nil {
+		return nil, err
+	}
+
 	lt.runners = make([]*runner, lt.threads)
 	for i := 0; i < lt.threads; i++ {
 		runner, err := newRunner(log, config)
@@ -64,6 +78,47 @@ func NewLoadTest(log logger.Logger, config *viper.Viper) (*LoadTest, error) {
 		lt.runners[i] = runner
 	}
 	return lt, nil
+}
+
+func (lt *LoadTest) configureOTel() error {
+	traceExporter, err := otlptracegrpc.New(
+		context.Background(),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:%d", lt.config.GetString("otlp.jaegerHost"), lt.config.GetInt("otlp.jaegerPort"))),
+		otlptracegrpc.WithInsecure())
+
+	if err != nil {
+		lt.log.Error("Unable to create a OTL exporter", err)
+		return err
+	}
+
+	traceProvider := tracesdk.NewTracerProvider(
+		// Always be sure to batch in production.
+		tracesdk.WithBatcher(traceExporter),
+		// Record information about this application in a Resource.
+		tracesdk.WithResource(
+			resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceNameKey.String(lt.config.GetString("otlp.serviceName")),
+			),
+		),
+		tracesdk.WithSampler(
+			tracesdk.ParentBased(
+				tracesdk.TraceIDRatioBased(
+					lt.config.GetFloat64("otlp.traceSamplingRatio")),
+				tracesdk.WithRemoteParentSampled(tracesdk.AlwaysSample()),
+				tracesdk.WithRemoteParentNotSampled(tracesdk.NeverSample()),
+				tracesdk.WithLocalParentSampled(tracesdk.AlwaysSample()),
+				tracesdk.WithLocalParentNotSampled(tracesdk.NeverSample())),
+		),
+	)
+	otel.SetTracerProvider(traceProvider)
+
+	propagator := propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{})
+	otel.SetTextMapPropagator(propagator)
+
+	return nil
 }
 
 // Run starts all runners
