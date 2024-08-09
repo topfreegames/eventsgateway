@@ -1,3 +1,4 @@
+# Those properties can also be loaded as ENV Vars with EVENTSGATEWAY_ prefix.
 kafka:
   logger:
     enabled: true
@@ -15,10 +16,24 @@ client:
   numRoutines: 2
   retryInterval: 2s
   grpc:
-    serverAddress: eventsgateway-api:5000
+    serverAddress: localhost:5000 #eventsgateway-api:5000
     timeout: 500ms
 loadtestclient:
-  duration: 10s
-  threads: 2
+  duration: 20s
+  threads: 20
   randSleepCeilingMs: 500
   randPropsSize: small # small, medium, large, jumbo
+  opentelemetry:
+    enabled: false
+    serviceName: "eventsgateway-client-loadtest-opentelemetry"
+    traceSamplingRatio: 1.0
+    jaegerHost: localhost
+    jaegerPort: 4317
+  opentracing:
+    enabled: true
+    serviceName: "eventsgateway-client-loadtest-opentracing"
+    jaegerHost: localhost
+    jaegerPort: 6831
+    samplerType: const
+    samplerParam: 1.0
+    logSpans: false

@@ -10,8 +10,12 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
+	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/topfreegames/eventsgateway/v4/metrics"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 	"strings"
 	"sync"
 	"time"
@@ -73,7 +77,21 @@ func New(
 		"topic":  c.topic,
 	})
 	var err error
-	if c.client, err = c.newGRPCClient(configPrefix, client, opts...); err != nil {
+
+	dialOpts := append(
+		[]grpc.DialOption{
+			grpc.WithChainUnaryInterceptor(
+				otelgrpc.UnaryClientInterceptor(
+					otelgrpc.WithPropagators(otel.GetTextMapPropagator()),
+					otelgrpc.WithTracerProvider(otel.GetTracerProvider()),
+				),
+				otgrpc.OpenTracingClientInterceptor(opentracing.GlobalTracer()),
+			),
+		},
+		opts...,
+	)
+
+	if c.client, err = c.newGRPCClient(configPrefix, client, dialOpts...); err != nil {
 		return nil, err
 	}
 	return c, nil
@@ -127,7 +145,7 @@ func (c *Client) registerMetrics(configPrefix string) {
 		metrics.ClientRequestsDroppedCounter,
 	}
 	err := metrics.RegisterMetrics(collectors)
-        if err != nil {
+	if err != nil {
 		c.logger.WithError(err).Error("failed to register metric")
 	}
 }

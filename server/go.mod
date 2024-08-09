@@ -7,7 +7,6 @@ require (
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/mmcloughlin/professor v0.0.0-20170922221822-6b97112ab8b3
 	github.com/onsi/ginkgo/v2 v2.19.1
 	github.com/onsi/gomega v1.34.0
@@ -19,6 +18,7 @@ require (
 	github.com/topfreegames/avro v1.0.2
 	github.com/topfreegames/protos v1.6.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.53.0
+	go.opentelemetry.io/contrib/propagators/jaeger v1.28.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/sdk v1.28.0
 	google.golang.org/grpc v1.65.0

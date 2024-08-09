@@ -10,15 +10,12 @@ package client
 import (
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
+	"time"
 )
 
 type gRPCClientSync struct {
@@ -69,18 +66,19 @@ func (s *gRPCClientSync) configureGRPCForwarderClient(
 	s.logger.WithFields(map[string]interface{}{
 		"operation": "configureGRPCForwarderClient",
 	}).Info("connecting to grpc server")
-	tracer := opentracing.GlobalTracer()
+
 	dialOpts := append(
 		[]grpc.DialOption{
 			grpc.WithInsecure(),
 			grpc.WithChainUnaryInterceptor(
-				otgrpc.OpenTracingClientInterceptor(tracer),
 				s.metricsReporterInterceptor,
 			),
 		},
 		opts...,
 	)
+
 	conn, err := grpc.Dial(serverAddress, dialOpts...)
+
 	if err != nil {
 		return err
 	}

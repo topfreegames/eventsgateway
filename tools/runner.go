@@ -24,6 +24,7 @@ package tools
 
 import (
 	"context"
+	"github.com/opentracing/opentracing-go"
 	"math/rand"
 	"time"
 
@@ -69,6 +70,7 @@ func (r *runner) configure() error {
 	r.randSleepCeilingMs = r.config.GetInt("loadtestclient.randSleepCeilingMs")
 	r.config.SetDefault("loadtestclient.randPropsSize", "small")
 	r.randPropsSize = r.config.GetString("loadtestclient.randPropsSize")
+
 	return nil
 }
 
@@ -78,14 +80,22 @@ func (r *runner) run() {
 	for {
 		select {
 		default:
+			span, childCtx := opentracing.StartSpanFromContext(ctx, "ParentSpanCreation")
+			// This is an example on how to keep tracing with decoupled contexts.
+			// Mostly used for async routines that should not use the paren context.
+			decoupledContext := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(childCtx))
+			dSpan, dCtx := opentracing.StartSpanFromContext(decoupledContext, "OperationAfterDecoupledContext")
+
 			props := buildProps(r.randPropsSize)
 			time.Sleep(time.Duration(rand.Intn(r.randSleepCeilingMs)) * time.Millisecond)
 			if rand.Intn(2) == 0 {
-				r.client.Send(ctx, "load test event", props)
+				r.client.Send(dCtx, "load test event", props)
 			} else {
-				r.client.SendToTopic(ctx, "load test event", props, randomTopic())
+				r.client.SendToTopic(dCtx, "load test event", props, randomTopic())
 			}
 			r.sentCounter++
+			dSpan.Finish()
+			span.Finish()
 		case <-stop:
 			return
 		}
