@@ -23,6 +23,9 @@ loadtestclient:
   threads: 20
   randSleepCeilingMs: 500
   randPropsSize: small # small, medium, large, jumbo
+  prometheus:
+    enabled: true
+    port: 9091
   opentelemetry:
     enabled: false
     serviceName: "eventsgateway-client-loadtest-opentelemetry"
