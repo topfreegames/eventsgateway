@@ -19,8 +19,8 @@ client:
     serverAddress: eventsgateway-api:5000 #eventsgateway-api:5000
     timeout: 500ms
 loadtestclient:
-  duration: 20s
-  threads: 20
+  duration: 10s
+  threads: 10
   randSleepCeilingMs: 500
   randPropsSize: small # small, medium, large, jumbo
   prometheus:

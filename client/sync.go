@@ -111,12 +111,12 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 			event.Topic,
 			"0",
 		).Observe(elapsedTime)
+
 		l.WithFields(map[string]interface{}{
 			"elapsedTime": elapsedTime,
 			"reply":       reply.(*pb.SendEventResponse),
 		}).Debug("request processed")
 	}(time.Now())
-
 	if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
 		l.WithError(err).Error("error processing request")
 		metrics.ClientRequestsFailureCounter.WithLabelValues(

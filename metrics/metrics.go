@@ -25,16 +25,30 @@ package metrics
 import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/spf13/viper"
 )
 
+const metricsNamespace = "eventsgateway"
+const metricsSubsystem = "client"
+
 var (
+
 	// ClientRequestsResponseTime summary, observes the API response time as perceived by the client
-	ClientRequestsResponseTime *prometheus.HistogramVec
+	ClientRequestsResponseTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: metricsNamespace,
+			Subsystem: metricsSubsystem,
+			Name:      "response_time_ms",
+			Help:      "the response time in ms of calls to server",
+			Buckets:   []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000},
+		},
+		[]string{"route", "topic", "retry"},
+	)
 
 	// ClientRequestsSuccessCounter is the count of successfull calls to the server
 	ClientRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "eventsgateway",
-		Subsystem: "client",
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
 		Name:      "requests_success_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
@@ -43,21 +57,21 @@ var (
 
 	// ClientRequestsFailureCounter is the count of failed calls to the server
 	ClientRequestsFailureCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "eventsgateway",
-		Subsystem: "client",
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
 		Name:      "requests_failure_counter",
 		Help:      "the count of failed client requests to the server",
 	},
 		[]string{"route", "topic", "retry", "reason"},
 	)
 
-	// ClientRequestsDroppedCounter is the count of requests that were dropped due
-	// to req.Retry > maxRetries
-	ClientRequestsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "eventsgateway",
-		Subsystem: "client",
-		Name:      "requests_dropped_counter",
-		Help:      "the count of dropped client requests to the server",
+	// AsyncClientRequestsDroppedCounter is the count of requests that were dropped due
+	// to req.Retry > maxRetries. Only available for Async mode
+	AsyncClientRequestsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "async_requests_dropped_counter",
+		Help:      "the count of dropped client async requests to the server",
 	},
 		[]string{"topic"},
 	)
@@ -66,7 +80,14 @@ var (
 // RegisterMetrics is a wrapper to handle prometheus.AlreadyRegisteredError;
 // it only returns an error if the metric wasn't already registered and there was an
 // actual error registering it.
-func RegisterMetrics(collectors []prometheus.Collector) error {
+func RegisterMetrics(configPrefix string, config *viper.Viper) error {
+	collectors := []prometheus.Collector{
+		ClientRequestsResponseTime,
+		ClientRequestsSuccessCounter,
+		ClientRequestsFailureCounter,
+		AsyncClientRequestsDroppedCounter,
+	}
+
 	for _, collector := range collectors {
 		err := prometheus.Register(collector)
 		if err != nil {

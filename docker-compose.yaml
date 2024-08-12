@@ -85,7 +85,7 @@ services:
     command:
       - sh
       - -c
-      - 'go run main.go load-test'
+      - 'go run main.go load-test -d'
     networks:
       - eventsgateway
 
