@@ -10,6 +10,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/credentials/insecure"
 	"math"
 	"sync"
 	"time"
@@ -81,7 +82,7 @@ func newGRPCClientAsync(
 		"timeout":        a.timeout,
 	})
 
-	if err := a.configureGRPCForwarderClient(serverAddress, client); err != nil {
+	if err := a.configureGRPCForwarderClient(serverAddress, client, opts...); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +115,7 @@ func (a *gRPCClientAsync) configureGRPCForwarderClient(
 	}).Info("connecting to grpc server")
 	dialOpts := append(
 		[]grpc.DialOption{
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithChainUnaryInterceptor(
 				a.metricsReporterInterceptor,
 			),

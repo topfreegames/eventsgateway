@@ -15,6 +15,7 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"time"
 )
 
@@ -69,7 +70,7 @@ func (s *gRPCClientSync) configureGRPCForwarderClient(
 
 	dialOpts := append(
 		[]grpc.DialOption{
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithChainUnaryInterceptor(
 				s.metricsReporterInterceptor,
 			),
