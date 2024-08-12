@@ -178,6 +178,7 @@ func (lt *LoadTest) startMetricsServer() {
 			MaxHeaderBytes: 1 << 20,
 			Handler:        r,
 		}
+		log.Info("Starting Metrics server...")
 		log.Fatal(s.ListenAndServe())
 	}()
 }
