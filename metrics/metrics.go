@@ -93,7 +93,7 @@ func RegisterMetrics(configPrefix string, config *viper.Viper) error {
 	for _, collector := range collectors {
 		err := prometheus.Register(collector)
 		if err != nil {
-			logrus.New().Printf("Error while registering EG metrics: %s", err)
+			logrus.New().Warnf("Error while registering EG metrics: %s", err)
 			var alreadyRegisteredError prometheus.AlreadyRegisteredError
 			if !errors.As(err, &alreadyRegisteredError) {
 				return err
