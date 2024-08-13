@@ -30,7 +30,7 @@ import (
 )
 
 const metricsNamespace = "eventsgateway"
-const metricsSubsystem = "client"
+const metricsSubsystem = "client_v4"
 
 var (
 
@@ -51,15 +51,6 @@ var (
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
 		Name:      "requests_success_counter",
-		Help:      "the count of successfull client requests to the server",
-	},
-		[]string{"route", "topic", "retry"},
-	)
-	// HelderRequestsSuccessCounter is the count of successfull calls to the server
-	HelderRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "helder_requests_success_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
 		[]string{"route", "topic", "retry"},
@@ -97,7 +88,6 @@ func RegisterMetrics(configPrefix string, config *viper.Viper) error {
 		ClientRequestsSuccessCounter,
 		ClientRequestsFailureCounter,
 		AsyncClientRequestsDroppedCounter,
-		HelderRequestsSuccessCounter,
 	}
 
 	for _, collector := range collectors {

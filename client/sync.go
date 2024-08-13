@@ -132,11 +132,6 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 		event.Topic,
 		"0",
 	).Inc()
-	metrics.HelderRequestsSuccessCounter.WithLabelValues(
-		method,
-		event.Topic,
-		"0",
-	).Inc()
 	return nil
 }
 
