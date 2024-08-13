@@ -23,7 +23,9 @@
 package metrics
 
 import (
+	"errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -49,6 +51,15 @@ var (
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
 		Name:      "requests_success_counter",
+		Help:      "the count of successfull client requests to the server",
+	},
+		[]string{"route", "topic", "retry"},
+	)
+	// HelderRequestsSuccessCounter is the count of successfull calls to the server
+	HelderRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "helder_requests_success_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
 		[]string{"route", "topic", "retry"},
@@ -81,24 +92,24 @@ var (
 // actual error registering it.
 func RegisterMetrics(configPrefix string, config *viper.Viper) error {
 
-	//collectors := []prometheus.Collector{
-	//
-	//}
-	prometheus.MustRegister(
+	collectors := []prometheus.Collector{
 		ClientRequestsResponseTime,
 		ClientRequestsSuccessCounter,
 		ClientRequestsFailureCounter,
-		AsyncClientRequestsDroppedCounter)
+		AsyncClientRequestsDroppedCounter,
+		HelderRequestsSuccessCounter,
+	}
 
-	//for _, collector := range collectors {
-	//	err := prometheus.MustRegister()
-	//	if err != nil {
-	//		var alreadyRegisteredError prometheus.AlreadyRegisteredError
-	//		if !errors.As(err, &alreadyRegisteredError) {
-	//			return err
-	//		}
-	//	}
-	//}
+	for _, collector := range collectors {
+		err := prometheus.Register(collector)
+		if err != nil {
+			logrus.New().Printf("Error while registering EG metrics: %s", err)
+			var alreadyRegisteredError prometheus.AlreadyRegisteredError
+			if !errors.As(err, &alreadyRegisteredError) {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
