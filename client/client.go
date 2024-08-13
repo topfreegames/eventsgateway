@@ -113,8 +113,9 @@ func (c *Client) newGRPCClient(
 		"serverAddress": c.serverAddress,
 		"async":         async,
 	})
-
+	c.logger.Infoln("Registering events gateway metrics...")
 	err := metrics.RegisterMetrics(configPrefix, c.config)
+	c.logger.Infoln("Events gateway metrics registered.")
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ client:
     timeout: 500ms
 loadtestclient:
   duration: 10s
-  threads: 10
+  threads: 1
   randSleepCeilingMs: 500
   randPropsSize: small # small, medium, large, jumbo
   prometheus:

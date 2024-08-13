@@ -28,7 +28,7 @@ pprof:
   enabled: true
   address: localhost:6060
 otlp:
-  enabled: true
+  enabled: false
   serviceName: "eventsgateway-server"
   traceSamplingRatio: 0.2
   jaegerHost: jaeger

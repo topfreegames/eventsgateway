@@ -23,7 +23,6 @@
 package metrics
 
 import (
-	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/viper"
 )
@@ -81,22 +80,25 @@ var (
 // it only returns an error if the metric wasn't already registered and there was an
 // actual error registering it.
 func RegisterMetrics(configPrefix string, config *viper.Viper) error {
-	collectors := []prometheus.Collector{
+
+	//collectors := []prometheus.Collector{
+	//
+	//}
+	prometheus.MustRegister(
 		ClientRequestsResponseTime,
 		ClientRequestsSuccessCounter,
 		ClientRequestsFailureCounter,
-		AsyncClientRequestsDroppedCounter,
-	}
+		AsyncClientRequestsDroppedCounter)
 
-	for _, collector := range collectors {
-		err := prometheus.Register(collector)
-		if err != nil {
-			var alreadyRegisteredError prometheus.AlreadyRegisteredError
-			if !errors.As(err, &alreadyRegisteredError) {
-				return err
-			}
-		}
-	}
+	//for _, collector := range collectors {
+	//	err := prometheus.MustRegister()
+	//	if err != nil {
+	//		var alreadyRegisteredError prometheus.AlreadyRegisteredError
+	//		if !errors.As(err, &alreadyRegisteredError) {
+	//			return err
+	//		}
+	//	}
+	//}
 
 	return nil
 }
