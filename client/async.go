@@ -149,7 +149,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	retry := fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
 
 	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Nanoseconds() / 1000000)
+		elapsedTime := float64(time.Now().UnixMilli() - startTime.UnixMilli())
 		for _, e := range events {
 			metrics.ClientRequestsResponseTime.WithLabelValues(
 				method,

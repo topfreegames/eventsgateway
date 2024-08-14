@@ -105,7 +105,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 	event := req.(*pb.Event)
 
 	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Nanoseconds() / 1000000)
+		elapsedTime := float64(time.Now().UnixMilli() - startTime.UnixMilli())
 		metrics.ClientRequestsResponseTime.WithLabelValues(
 			method,
 			event.Topic,
@@ -117,6 +117,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 			"reply":       reply.(*pb.SendEventResponse),
 		}).Debug("request processed")
 	}(time.Now())
+
 	if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
 		l.WithError(err).Error("error processing request")
 		metrics.ClientRequestsFailureCounter.WithLabelValues(
