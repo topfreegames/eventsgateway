@@ -2,7 +2,7 @@ scrape_configs:
   - job_name: app
     scrape_interval: 5s
     static_configs:
-      - targets: ['eventsgateway-api:9091']
+      - targets: ['eventsgateway-api:9091', 'eventsgateway-client:9002']
 
 # prometheus metrics
 #  - job_name: 'prometheus'

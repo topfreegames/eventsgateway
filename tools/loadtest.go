@@ -25,7 +25,10 @@ package tools
 import (
 	"context"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 	jaegerclient "github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"go.opentelemetry.io/otel"
@@ -36,6 +39,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"io"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -156,8 +160,32 @@ func (lt *LoadTest) configureOpenTelemetry() error {
 	return nil
 }
 
+func (lt *LoadTest) startMetricsServer() {
+	go func() {
+		envEnabled := lt.config.GetString("loadtestclient.prometheus.enabled")
+		if envEnabled != "true" {
+			log.Warn("Prometheus web server disabled")
+			return
+		}
+
+		r := mux.NewRouter()
+		r.Handle("/metrics", promhttp.Handler())
+
+		s := &http.Server{
+			Addr:           lt.config.GetString("loadtestclient.prometheus.port"),
+			ReadTimeout:    8 * time.Second,
+			WriteTimeout:   8 * time.Second,
+			MaxHeaderBytes: 1 << 20,
+			Handler:        r,
+		}
+		log.Info("Starting Metrics server...")
+		log.Fatal(s.ListenAndServe())
+	}()
+}
+
 // Run starts all runners
 func (lt *LoadTest) Run() {
+	lt.startMetricsServer()
 	lt.wg.Add(lt.threads)
 	for _, runner := range lt.runners {
 		go runner.run()

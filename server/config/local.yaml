@@ -28,11 +28,11 @@ pprof:
   enabled: true
   address: localhost:6060
 otlp:
-  enabled: true
+  enabled: false
   serviceName: "eventsgateway-server"
   traceSamplingRatio: 0.2
   jaegerHost: jaeger
   jaegerPort: 4317
 prometheus:
-  enabled: false
+  enabled: true
   port: 0.0.0.0:9091

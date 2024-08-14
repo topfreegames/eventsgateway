@@ -10,6 +10,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/credentials/insecure"
 	"math"
 	"sync"
 	"time"
@@ -81,7 +82,7 @@ func newGRPCClientAsync(
 		"timeout":        a.timeout,
 	})
 
-	if err := a.configureGRPCForwarderClient(serverAddress, client); err != nil {
+	if err := a.configureGRPCForwarderClient(serverAddress, client, opts...); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +115,7 @@ func (a *gRPCClientAsync) configureGRPCForwarderClient(
 	}).Info("connecting to grpc server")
 	dialOpts := append(
 		[]grpc.DialOption{
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithChainUnaryInterceptor(
 				a.metricsReporterInterceptor,
 			),
@@ -148,7 +149,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	retry := fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
 
 	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Nanoseconds() / 1000000)
+		elapsedTime := float64(time.Now().UnixMilli() - startTime.UnixMilli())
 		for _, e := range events {
 			metrics.ClientRequestsResponseTime.WithLabelValues(
 				method,
@@ -246,7 +247,7 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 	if retryCount > a.maxRetries {
 		l.Info("dropped events due to max retries")
 		for _, e := range req.Events {
-			metrics.ClientRequestsDroppedCounter.WithLabelValues(
+			metrics.AsyncClientRequestsDroppedCounter.WithLabelValues(
 				e.Topic,
 			).Inc()
 		}

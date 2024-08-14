@@ -76,6 +76,19 @@ services:
     networks:
       - eventsgateway
 
+  eventsgateway-client:
+    image: eventsgateway-client-dev
+    ports:
+      - "9002:9002"
+    volumes:
+      - ./:/app
+    command:
+      - sh
+      - -c
+      - 'go run main.go load-test -d'
+    networks:
+      - eventsgateway
+
   jupyter:
     image: quay.io/jupyter/all-spark-notebook
     ports:

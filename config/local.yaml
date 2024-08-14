@@ -16,13 +16,16 @@ client:
   numRoutines: 2
   retryInterval: 2s
   grpc:
-    serverAddress: localhost:5000 #eventsgateway-api:5000
+    serverAddress: eventsgateway-api:5000 #eventsgateway-api:5000
     timeout: 500ms
 loadtestclient:
-  duration: 20s
-  threads: 20
+  duration: 60s
+  threads: 15
   randSleepCeilingMs: 500
   randPropsSize: small # small, medium, large, jumbo
+  prometheus:
+    enabled: true
+    port: 0.0.0.0:9002
   opentelemetry:
     enabled: false
     serviceName: "eventsgateway-client-loadtest-opentelemetry"

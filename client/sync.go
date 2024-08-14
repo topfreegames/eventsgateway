@@ -15,6 +15,7 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"time"
 )
 
@@ -69,7 +70,7 @@ func (s *gRPCClientSync) configureGRPCForwarderClient(
 
 	dialOpts := append(
 		[]grpc.DialOption{
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithChainUnaryInterceptor(
 				s.metricsReporterInterceptor,
 			),
@@ -104,12 +105,13 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 	event := req.(*pb.Event)
 
 	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Nanoseconds() / 1000000)
+		elapsedTime := float64(time.Now().UnixMilli() - startTime.UnixMilli())
 		metrics.ClientRequestsResponseTime.WithLabelValues(
 			method,
 			event.Topic,
 			"0",
 		).Observe(elapsedTime)
+
 		l.WithFields(map[string]interface{}{
 			"elapsedTime": elapsedTime,
 			"reply":       reply.(*pb.SendEventResponse),
