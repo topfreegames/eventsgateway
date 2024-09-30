@@ -1,12 +1,20 @@
 TFGCo EventsGateway
 ===================
 
-## [Development README](#development-readme)
-## [Client README](#client-readme)
+## [Development](#development-readme)
+## [Client](#client-readme)
 
 <br/><br/>
 
-# Client README
+# Client
+
+## Important Notice
+The Events Gateway service works following the At Least Once semantics, that means it will not prevent duplicates.
+In case the Client loses its connection (because of networking instabilities) after sending the event to the Events Gateway server, the server will complete the 
+request with success and send the data to Kafka, but won't be able to acknowledge the client. If the client has some retry logic (built in on async mode) it will
+retry to send the same event and will duplicate it.
+
+If you really need distinct values guarantee, consider handling it on the downstream pipelines.
 
 ## Configuration
 
@@ -72,7 +80,7 @@ func main() {
 
 ```
 
-# Development README
+# Development
 
 ## Running locally
 
