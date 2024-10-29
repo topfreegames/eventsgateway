@@ -36,11 +36,31 @@ import (
 )
 
 var (
+	// LabelRoute is the GRPC route the request is reaching
+	LabelRoute = "route"
+	// LabelTopic is the Kafka topic the event refers to
+	LabelTopic = "topic"
+	// LabelStatus is the status of the request. OK if success or ERROR if fail
+	LabelStatus = "status"
+)
+
+var (
 	// APIResponseTime summary, observes the API response time as perceived by the server
 	APIResponseTime *prometheus.HistogramVec
 
 	// APIPayloadSize summary, observes the payload size of requests arriving at the server
 	APIPayloadSize *prometheus.HistogramVec
+
+	// APIIncomingEvents count of all events the API is receiving (unpacking the array of input events)
+	APIIncomingEvents = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "api",
+			Name:      "incoming_events",
+			Help:      "A counter of succeeded api requests",
+		},
+		[]string{LabelTopic},
+	)
 
 	// APIRequestsSuccessCounter counter
 	APIRequestsSuccessCounter = prometheus.NewCounterVec(
@@ -128,7 +148,7 @@ func StartServer(config *viper.Viper) {
 			Help:      "the response time in ms of api routes",
 			Buckets:   defaultLatencyBuckets(config),
 		},
-		[]string{"route", "topic", "retry"},
+		[]string{LabelRoute, LabelTopic, LabelReason},
 	)
 
 	collectors := []prometheus.Collector{
