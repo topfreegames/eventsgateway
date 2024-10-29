@@ -193,9 +193,7 @@ func (a *App) metricsReporterInterceptor(
 
 	topic := events[0].Topic
 	metrics.APIPayloadSize.WithLabelValues(
-		info.FullMethod,
-		topic,
-	).Observe(float64(payloadSize))
+		topic).Observe(float64(payloadSize))
 	metrics.APIIncomingEvents.WithLabelValues(
 		topic).Add(float64(len(events)))
 
@@ -206,8 +204,8 @@ func (a *App) metricsReporterInterceptor(
 		responseStatus = "ERROR"
 		metrics.APIResponseTime.WithLabelValues(
 			info.FullMethod,
-			topic,
 			responseStatus,
+			topic,
 		).Observe(float64(time.Since(startTime).Milliseconds()))
 		a.log.
 			WithField("route", info.FullMethod).
@@ -217,8 +215,8 @@ func (a *App) metricsReporterInterceptor(
 	}
 	metrics.APIResponseTime.WithLabelValues(
 		info.FullMethod,
-		topic,
 		responseStatus,
+		topic,
 	).Observe(float64(time.Since(startTime).Milliseconds()))
 	return res, nil
 }

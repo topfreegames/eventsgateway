@@ -67,6 +67,8 @@ func (k *KafkaSender) SendEvent(
 	ctx context.Context,
 	event *pb.Event,
 ) error {
+	startTime := time.Now()
+
 	l := k.logger.WithFields(map[string]interface{}{
 		"topic": event.GetTopic(),
 		"event": event,
@@ -103,16 +105,16 @@ func (k *KafkaSender) SendEvent(
 	}
 
 	topic := event.GetTopic()
-
 	partition, offset, err := k.producer.Produce(ctx, topic, buf.Bytes())
 
+	kafkaStatus := "OK"
 	if err != nil {
-		l.WithError(err).
-			Error("error producing event to kafka")
-		metrics.APITopicsSubmission.WithLabelValues(topic, "false").Inc()
+		kafkaStatus = "ERROR"
+		l.WithError(err).Error("error producing event to kafka")
+		metrics.KafkaRequestLatency.WithLabelValues(kafkaStatus, topic).Observe(float64(time.Since(startTime).Milliseconds()))
 		return err
 	}
-	metrics.APITopicsSubmission.WithLabelValues(topic, "true").Inc()
+	metrics.KafkaRequestLatency.WithLabelValues(kafkaStatus, topic).Observe(float64(time.Since(startTime).Milliseconds()))
 	l.WithFields(map[string]interface{}{
 		"partition": partition,
 		"offset":    offset,
