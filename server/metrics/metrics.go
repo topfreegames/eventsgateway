@@ -77,16 +77,14 @@ var (
 func defaultLatencyBuckets(config *viper.Viper) []float64 {
 	// in milliseconds
 	const configKey = "prometheus.buckets.latency"
-	config.SetDefault(configKey, []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000})
-
+	config.SetDefault(configKey, []float64{10, 30, 50, 100, 500})
 	return config.Get(configKey).([]float64)
 }
 
 func defaultPayloadSizeBuckets(config *viper.Viper) []float64 {
 	// in bytes
 	configKey := "prometheus.buckets.payloadSize"
-	config.SetDefault(configKey, []float64{100, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000})
-
+	config.SetDefault(configKey, []float64{10000, 50000, 100000, 500000, 1000000, 5000000})
 	return config.Get(configKey).([]float64)
 }
 
