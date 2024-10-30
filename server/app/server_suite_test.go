@@ -30,13 +30,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
-
-	"strings"
-	"testing"
-
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
+	"github.com/topfreegames/eventsgateway/v4/server/metrics"
 	"github.com/topfreegames/eventsgateway/v4/server/mocks"
 	mockpb "github.com/topfreegames/protos/eventsgateway/grpc/mock"
+	"strings"
+	"testing"
 )
 
 // GetDefaultConfig returns the configuration at ./config/test.yaml
@@ -77,7 +76,7 @@ var (
 var _ = BeforeEach(func() {
 	log = &logger.NullLogger{}
 	config, _ = GetDefaultConfig()
-
+	metrics.StartServer(config)
 	mockCtrl = gomock.NewController(GinkgoT())
 	mockGRPCServer = mockpb.NewMockGRPCForwarderServer(mockCtrl)
 	mockForwarder = mocks.NewMockForwarder(mockCtrl)

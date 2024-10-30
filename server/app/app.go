@@ -177,7 +177,6 @@ func (a *App) metricsReporterInterceptor(
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 	events := []*pb.Event{}
-	retry := "0"
 	payloadSize := 0
 	switch t := req.(type) {
 	case *pb.Event:
@@ -187,70 +186,38 @@ func (a *App) metricsReporterInterceptor(
 	case *pb.SendEventsRequest:
 		request := req.(*pb.SendEventsRequest)
 		events = append(events, request.Events...)
-		retry = fmt.Sprintf("%d", request.Retry)
 		payloadSize = proto.Size(request)
 	default:
 		a.log.WithField("route", info.FullMethod).Infof("Unexpected request type %T", t)
 	}
 
 	topic := events[0].Topic
-	l := a.log.
-		WithField("route", info.FullMethod).
-		WithField("topic", topic)
-
 	metrics.APIPayloadSize.WithLabelValues(
-		info.FullMethod,
-		topic,
-	).Observe(float64(payloadSize))
+		topic).Observe(float64(payloadSize))
+	metrics.APIIncomingEvents.WithLabelValues(
+		topic).Add(float64(len(events)))
 
-	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Nanoseconds() / (1000 * 1000))
-		for _, e := range events {
-			metrics.APIResponseTime.WithLabelValues(
-				info.FullMethod,
-				e.Topic,
-				retry,
-			).Observe(elapsedTime)
-		}
-		l.WithField("elapsedTime", elapsedTime).Debug("request processed")
-	}(time.Now())
-
-	reportedFailures := false
+	startTime := time.Now()
 	res, err := handler(ctx, req)
+	responseStatus := "OK"
 	if err != nil {
-		l.WithError(err).Error("error processing request")
-		for _, e := range events {
-			metrics.APIRequestsFailureCounter.WithLabelValues(
-				info.FullMethod,
-				e.Topic,
-				retry,
-				"error processing request",
-			).Inc()
-		}
-		reportedFailures = true
+		responseStatus = "ERROR"
+		metrics.APIResponseTime.WithLabelValues(
+			info.FullMethod,
+			responseStatus,
+			topic,
+		).Observe(float64(time.Since(startTime).Milliseconds()))
+		a.log.
+			WithField("route", info.FullMethod).
+			WithField("topic", topic).
+			WithError(err).Error("error processing request")
 		return res, err
 	}
-	failureIndexes := []int64{}
-	if _, ok := res.(*pb.SendEventsResponse); ok {
-		failureIndexes = res.(*pb.SendEventsResponse).FailureIndexes
-	}
-	fC := 0
-	for i, e := range events {
-		if !reportedFailures && len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
-			metrics.APIRequestsFailureCounter.WithLabelValues(
-				info.FullMethod,
-				e.Topic,
-				retry,
-				"couldn't produce event",
-			).Inc()
-			fC++
-		}
-		metrics.APIRequestsSuccessCounter.WithLabelValues(
-			info.FullMethod,
-			e.Topic,
-			retry,
-		).Inc()
-	}
+	metrics.APIResponseTime.WithLabelValues(
+		info.FullMethod,
+		responseStatus,
+		topic,
+	).Observe(float64(time.Since(startTime).Milliseconds()))
 	return res, nil
 }
 

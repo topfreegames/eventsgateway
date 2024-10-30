@@ -35,6 +35,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+const (
+	// LabelRoute is the GRPC route the request is reaching
+	LabelRoute = "route"
+	// LabelTopic is the Kafka topic the event refers to
+	LabelTopic = "topic"
+	// LabelStatus is the status of the request. OK if success or ERROR if fail
+	LabelStatus = "status"
+)
+
 var (
 	// APIResponseTime summary, observes the API response time as perceived by the server
 	APIResponseTime *prometheus.HistogramVec
@@ -42,51 +51,24 @@ var (
 	// APIPayloadSize summary, observes the payload size of requests arriving at the server
 	APIPayloadSize *prometheus.HistogramVec
 
-	// APIRequestsSuccessCounter counter
-	APIRequestsSuccessCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "eventsgateway",
-			Subsystem: "api",
-			Name:      "requests_success_counter",
-			Help:      "A counter of succeeded api requests",
-		},
-		[]string{"route", "topic", "retry"},
-	)
+	// KafkaRequestLatency summary, observes that kafka request latency per topic and status
+	KafkaRequestLatency *prometheus.HistogramVec
 
-	// APIRequestsFailureCounter counter
-	APIRequestsFailureCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "eventsgateway",
-			Subsystem: "api",
-			Name:      "requests_failure_counter",
-			Help:      "A counter of failed api requests",
-		},
-		[]string{"route", "topic", "retry", "reason"},
-	)
-
-	APITopicsSubmission = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "eventsgateway",
-		Subsystem: "api",
-		Name:      "topics_submission_total",
-		Help:      "Topic submissions sent to kafka",
-	},
-		[]string{"topic", "success"},
-	)
+	// APIIncomingEvents count of all events the API is receiving (unpacking the array of input events)
+	APIIncomingEvents *prometheus.CounterVec
 )
 
 func defaultLatencyBuckets(config *viper.Viper) []float64 {
 	// in milliseconds
 	const configKey = "prometheus.buckets.latency"
-	config.SetDefault(configKey, []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000})
-
+	config.SetDefault(configKey, []float64{10, 30, 50, 100, 500})
 	return config.Get(configKey).([]float64)
 }
 
 func defaultPayloadSizeBuckets(config *viper.Viper) []float64 {
 	// in bytes
 	configKey := "prometheus.buckets.payloadSize"
-	config.SetDefault(configKey, []float64{100, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000})
-
+	config.SetDefault(configKey, []float64{10000, 50000, 100000, 500000, 1000000, 5000000})
 	return config.Get(configKey).([]float64)
 }
 
@@ -119,7 +101,7 @@ func StartServer(config *viper.Viper) {
 			Help:      "payload size of API routes, in bytes",
 			Buckets:   defaultPayloadSizeBuckets(config),
 		},
-		[]string{"route", "topic"},
+		[]string{LabelTopic},
 	)
 
 	APIResponseTime = prometheus.NewHistogramVec(
@@ -130,15 +112,34 @@ func StartServer(config *viper.Viper) {
 			Help:      "the response time in ms of api routes",
 			Buckets:   defaultLatencyBuckets(config),
 		},
-		[]string{"route", "topic", "retry"},
+		[]string{LabelRoute, LabelStatus, LabelTopic},
+	)
+
+	APIIncomingEvents = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "api",
+			Name:      "incoming_events",
+			Help:      "A counter of succeeded api requests",
+		},
+		[]string{LabelTopic},
+	)
+	KafkaRequestLatency = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "eventsgateway",
+			Subsystem: "kafka",
+			Name:      "response_time_ms",
+			Help:      "the response time in ms of Kafka",
+			Buckets:   defaultLatencyBuckets(config),
+		},
+		[]string{LabelStatus, LabelTopic},
 	)
 
 	collectors := []prometheus.Collector{
 		APIResponseTime,
 		APIPayloadSize,
-		APIRequestsFailureCounter,
-		APIRequestsSuccessCounter,
-		APITopicsSubmission,
+		APIIncomingEvents,
+		KafkaRequestLatency,
 	}
 
 	err := RegisterMetrics(collectors)
