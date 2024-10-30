@@ -35,7 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
+const (
 	// LabelRoute is the GRPC route the request is reaching
 	LabelRoute = "route"
 	// LabelTopic is the Kafka topic the event refers to
