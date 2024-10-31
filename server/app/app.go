@@ -25,6 +25,9 @@ package app
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/topfreegames/eventsgateway/v4/server/forwarder"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -32,8 +35,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"net"
-	"time"
 
 	goMetrics "github.com/rcrowley/go-metrics"
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
@@ -194,14 +195,12 @@ func (a *App) metricsReporterInterceptor(
 	topic := events[0].Topic
 	metrics.APIPayloadSize.WithLabelValues(
 		topic).Observe(float64(payloadSize))
-	metrics.APIIncomingEvents.WithLabelValues(
-		topic).Add(float64(len(events)))
 
 	startTime := time.Now()
 	res, err := handler(ctx, req)
-	responseStatus := "OK"
+	responseStatus := "ok"
 	if err != nil {
-		responseStatus = "ERROR"
+		responseStatus = "error"
 		metrics.APIResponseTime.WithLabelValues(
 			info.FullMethod,
 			responseStatus,
