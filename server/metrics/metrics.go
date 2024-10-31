@@ -24,9 +24,10 @@ package metrics
 
 import (
 	"errors"
-	"github.com/spf13/viper"
 	"net/http"
 	"time"
+
+	"github.com/spf13/viper"
 
 	log "github.com/sirupsen/logrus"
 
@@ -53,9 +54,6 @@ var (
 
 	// KafkaRequestLatency summary, observes that kafka request latency per topic and status
 	KafkaRequestLatency *prometheus.HistogramVec
-
-	// APIIncomingEvents count of all events the API is receiving (unpacking the array of input events)
-	APIIncomingEvents *prometheus.CounterVec
 )
 
 func defaultLatencyBuckets(config *viper.Viper) []float64 {
@@ -115,15 +113,6 @@ func StartServer(config *viper.Viper) {
 		[]string{LabelRoute, LabelStatus, LabelTopic},
 	)
 
-	APIIncomingEvents = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "eventsgateway",
-			Subsystem: "api",
-			Name:      "incoming_events",
-			Help:      "A counter of succeeded api requests",
-		},
-		[]string{LabelTopic},
-	)
 	KafkaRequestLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: "eventsgateway",
@@ -138,7 +127,6 @@ func StartServer(config *viper.Viper) {
 	collectors := []prometheus.Collector{
 		APIResponseTime,
 		APIPayloadSize,
-		APIIncomingEvents,
 		KafkaRequestLatency,
 	}
 

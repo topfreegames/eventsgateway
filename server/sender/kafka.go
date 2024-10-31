@@ -107,9 +107,9 @@ func (k *KafkaSender) SendEvent(
 	topic := event.GetTopic()
 	partition, offset, err := k.producer.Produce(ctx, topic, buf.Bytes())
 
-	kafkaStatus := "OK"
+	kafkaStatus := "ok"
 	if err != nil {
-		kafkaStatus = "ERROR"
+		kafkaStatus = "error"
 		l.WithError(err).Error("error producing event to kafka")
 		metrics.KafkaRequestLatency.WithLabelValues(kafkaStatus, topic).Observe(float64(time.Since(startTime).Milliseconds()))
 		return err
