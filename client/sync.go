@@ -114,6 +114,10 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 			"0",
 			err.Error(),
 		).Observe(float64(time.Since(startTime).Milliseconds()))
+		metrics.ClientEventsCounter.WithLabelValues(
+			method,
+			event.Topic,
+			"failed").Inc()
 		return err
 	}
 	metrics.ClientRequestsResponseTime.WithLabelValues(
@@ -122,6 +126,10 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 		"0",
 		"ok",
 	).Observe(float64(time.Since(startTime).Milliseconds()))
+	metrics.ClientEventsCounter.WithLabelValues(
+		method,
+		event.Topic,
+		"ok").Inc()
 	return nil
 }
 

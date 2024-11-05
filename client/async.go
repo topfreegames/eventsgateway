@@ -160,6 +160,10 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 			retry,
 			err.Error(),
 		).Observe(float64(time.Since(startTime).Milliseconds()))
+		metrics.ClientEventsCounter.WithLabelValues(
+			method,
+			topicName,
+			"failed").Add(float64(len(events)))
 		return err
 	}
 	metrics.ClientRequestsResponseTime.WithLabelValues(
@@ -168,7 +172,18 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 		retry,
 		"ok",
 	).Observe(float64(time.Since(startTime).Milliseconds()))
-	//failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
+
+	failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
+	if len(failureIndexes) > 0 {
+		metrics.ClientEventsCounter.WithLabelValues(
+			method,
+			topicName,
+			"failed").Add(float64(len(failureIndexes)))
+	}
+	metrics.ClientEventsCounter.WithLabelValues(
+		method,
+		topicName,
+		"ok").Add(float64(len(events) - len(failureIndexes)))
 
 	return nil
 }

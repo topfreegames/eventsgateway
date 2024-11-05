@@ -46,24 +46,14 @@ var (
 		[]string{"route", "topic", "retry", "reason"},
 	)
 
-	// ClientRequestsSuccessCounter is the count of successfull calls to the server
-	ClientRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// ClientEventsCounter is the count of events broken by topic and status
+	ClientEventsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
 		Name:      "requests_success_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
-		[]string{"route", "topic", "retry"},
-	)
-
-	// ClientRequestsFailureCounter is the count of failed calls to the server
-	ClientRequestsFailureCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "requests_failure_counter",
-		Help:      "the count of failed client requests to the server",
-	},
-		[]string{"route", "topic", "retry", "reason"},
+		[]string{"route", "topic", "reason"},
 	)
 
 	// AsyncClientEventsDroppedCounter is the count of requests that were dropped due
@@ -85,8 +75,7 @@ func RegisterMetrics(configPrefix string, config *viper.Viper) error {
 
 	collectors := []prometheus.Collector{
 		ClientRequestsResponseTime,
-		ClientRequestsSuccessCounter,
-		ClientRequestsFailureCounter,
+		ClientEventsCounter,
 		AsyncClientEventsDroppedCounter,
 	}
 
