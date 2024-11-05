@@ -32,6 +32,17 @@ import (
 const metricsNamespace = "eventsgateway"
 const metricsSubsystem = "client_v4"
 
+const (
+	// LabelRoute is the GRPC route the request is reaching
+	LabelRoute = "route"
+	// LabelTopic is the Kafka topic the event refers to
+	LabelTopic = "topic"
+	// LabelStatus is the status of the request. OK if success or ERROR if fail
+	LabelStatus = "status"
+	// LabelRetry is the counter of the requests retries to EG server
+	LabelRetry = "retry"
+)
+
 var (
 
 	// ClientRequestsResponseTime summary, observes the API response time as perceived by the client
@@ -41,19 +52,19 @@ var (
 			Subsystem: metricsSubsystem,
 			Name:      "response_time_ms",
 			Help:      "the response time in ms of calls to server",
-			Buckets:   []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000},
+			Buckets:   []float64{10, 30, 50, 100, 500},
 		},
-		[]string{"route", "topic", "retry", "reason"},
+		[]string{LabelRoute, LabelTopic, LabelRetry, LabelStatus},
 	)
 
 	// ClientEventsCounter is the count of events broken by topic and status
 	ClientEventsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
-		Name:      "requests_success_counter",
+		Name:      "events_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
-		[]string{"route", "topic", "reason"},
+		[]string{LabelRoute, LabelTopic, LabelStatus},
 	)
 
 	// AsyncClientEventsDroppedCounter is the count of requests that were dropped due
@@ -61,10 +72,10 @@ var (
 	AsyncClientEventsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
-		Name:      "async_requests_dropped_counter",
+		Name:      "async_events_dropped_counter",
 		Help:      "the count of dropped client async requests to the server",
 	},
-		[]string{"topic"},
+		[]string{LabelTopic},
 	)
 )
 
