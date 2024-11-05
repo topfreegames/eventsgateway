@@ -105,7 +105,7 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 	event := req.(*pb.Event)
 
 	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Now().UnixMilli() - startTime.UnixMilli())
+		elapsedTime := float64(time.Since(startTime).Milliseconds())
 		metrics.ClientRequestsResponseTime.WithLabelValues(
 			method,
 			event.Topic,

@@ -66,9 +66,9 @@ var (
 		[]string{"route", "topic", "retry", "reason"},
 	)
 
-	// AsyncClientRequestsDroppedCounter is the count of requests that were dropped due
+	// AsyncClientEventsDroppedCounter is the count of requests that were dropped due
 	// to req.Retry > maxRetries. Only available for Async mode
-	AsyncClientRequestsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	AsyncClientEventsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
 		Name:      "async_requests_dropped_counter",
@@ -87,7 +87,7 @@ func RegisterMetrics(configPrefix string, config *viper.Viper) error {
 		ClientRequestsResponseTime,
 		ClientRequestsSuccessCounter,
 		ClientRequestsFailureCounter,
-		AsyncClientRequestsDroppedCounter,
+		AsyncClientEventsDroppedCounter,
 	}
 
 	for _, collector := range collectors {
