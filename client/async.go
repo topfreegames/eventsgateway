@@ -221,13 +221,12 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		"size":       len(req.Events),
 	})
 	l.Debug("sending events")
+	topicName := req.Events[0].Topic
 	if retryCount > a.maxRetries {
 		l.Info("dropped events due to max retries")
-		for _, e := range req.Events {
-			metrics.AsyncClientRequestsDroppedCounter.WithLabelValues(
-				e.Topic,
-			).Inc()
-		}
+		metrics.AsyncClientRequestsDroppedCounter.WithLabelValues(
+			topicName,
+		).Add(float64(len(req.Events)))
 		a.wg.Done()
 		return
 	}
@@ -249,13 +248,13 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 	if res != nil && len(res.FailureIndexes) != 0 {
 		l.WithFields(map[string]interface{}{
 			"failureIndexes": res.FailureIndexes,
-		}).Error("failed to send events")
+		}).Error("failed to send failedEvents")
 		time.Sleep(time.Duration(math.Pow(2, float64(retryCount))) * a.retryInterval)
-		events := make([]*pb.Event, 0, len(res.FailureIndexes))
+		failedEvents := make([]*pb.Event, 0, len(res.FailureIndexes))
 		for _, index := range res.FailureIndexes {
-			events = append(events, req.Events[index])
+			failedEvents = append(failedEvents, req.Events[index])
 		}
-		req.Events = events
+		req.Events = failedEvents
 		a.sendEvents(req, retryCount+1)
 		return
 	}
