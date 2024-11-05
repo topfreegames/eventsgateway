@@ -67,6 +67,16 @@ var (
 		[]string{LabelRoute, LabelTopic, LabelStatus},
 	)
 
+	// AsyncClientEventsChannelLength is the number of current events in the eventsChannel buffer
+	AsyncClientEventsChannelLength = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "async_events_channel_length",
+		Help:      "the number of current events in the eventsChannel buffer in the async client",
+	},
+		[]string{LabelTopic},
+	)
+
 	// AsyncClientEventsDroppedCounter is the count of requests that were dropped due
 	// to req.Retry > maxRetries. Only available for Async mode
 	AsyncClientEventsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -88,6 +98,7 @@ func RegisterMetrics(configPrefix string, config *viper.Viper) error {
 		ClientRequestsResponseTime,
 		ClientEventsCounter,
 		AsyncClientEventsDroppedCounter,
+		AsyncClientEventsChannelLength,
 	}
 
 	for _, collector := range collectors {

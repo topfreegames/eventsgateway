@@ -212,6 +212,8 @@ func (a *gRPCClientAsync) sendRoutine() {
 	for {
 		select {
 		case e := <-a.eventsChannel:
+			metrics.AsyncClientEventsChannelLength.WithLabelValues(
+				e.Topic).Set(float64(len(a.eventsChannel)))
 			if len(req.Events) == 0 {
 				a.wg.Add(1)
 			}
