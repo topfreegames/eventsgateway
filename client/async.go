@@ -146,53 +146,30 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	})
 
 	events := req.(*pb.SendEventsRequest).Events
+	topicName := events[0].Topic
 	retry := fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
 
 	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Now().UnixMilli() - startTime.UnixMilli())
-		for _, e := range events {
-			metrics.ClientRequestsResponseTime.WithLabelValues(
-				method,
-				e.Topic,
-				retry,
-			).Observe(elapsedTime)
-		}
+		elapsedTime := float64(time.Since(startTime).Milliseconds())
+		metrics.ClientRequestsResponseTime.WithLabelValues(
+			method,
+			topicName,
+			retry,
+		).Observe(elapsedTime)
 		l.WithFields(map[string]interface{}{
 			"elapsedTime": elapsedTime,
 			"reply":       reply.(*pb.SendEventsResponse),
 		}).Debug("request processed")
 	}(time.Now())
 
-	if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
+	err := invoker(ctx, method, req, reply, cc, opts...)
+
+	if err != nil {
 		l.WithError(err).Error("error processing request")
-		for _, e := range events {
-			metrics.ClientRequestsFailureCounter.WithLabelValues(
-				method,
-				e.Topic,
-				retry,
-				err.Error(),
-			).Inc()
-		}
 		return err
 	}
-	failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
-	fC := 0
-	for i, e := range events {
-		if len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
-			metrics.ClientRequestsFailureCounter.WithLabelValues(
-				method,
-				e.Topic,
-				retry,
-				"couldn't produce event",
-			).Inc()
-			fC++
-		}
-		metrics.ClientRequestsSuccessCounter.WithLabelValues(
-			method,
-			e.Topic,
-			retry,
-		).Inc()
-	}
+	//failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
+
 	return nil
 }
 
