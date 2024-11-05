@@ -148,26 +148,26 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	events := req.(*pb.SendEventsRequest).Events
 	topicName := events[0].Topic
 	retry := fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
-
-	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Milliseconds())
-		metrics.ClientRequestsResponseTime.WithLabelValues(
-			method,
-			topicName,
-			retry,
-		).Observe(elapsedTime)
-		l.WithFields(map[string]interface{}{
-			"elapsedTime": elapsedTime,
-			"reply":       reply.(*pb.SendEventsResponse),
-		}).Debug("request processed")
-	}(time.Now())
+	startTime := time.Now()
 
 	err := invoker(ctx, method, req, reply, cc, opts...)
 
 	if err != nil {
 		l.WithError(err).Error("error processing request")
+		metrics.ClientRequestsResponseTime.WithLabelValues(
+			method,
+			topicName,
+			retry,
+			err.Error(),
+		).Observe(float64(time.Since(startTime).Milliseconds()))
 		return err
 	}
+	metrics.ClientRequestsResponseTime.WithLabelValues(
+		method,
+		topicName,
+		retry,
+		"ok",
+	).Observe(float64(time.Since(startTime).Milliseconds()))
 	//failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
 
 	return nil
