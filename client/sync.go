@@ -103,36 +103,25 @@ func (s *gRPCClientSync) metricsReporterInterceptor(
 	})
 
 	event := req.(*pb.Event)
+	startTime := time.Now()
 
-	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Since(startTime).Milliseconds())
+	err := invoker(ctx, method, req, reply, cc, opts...)
+	if err != nil {
+		l.WithError(err).Error("error processing request")
 		metrics.ClientRequestsResponseTime.WithLabelValues(
 			method,
 			event.Topic,
 			"0",
-		).Observe(elapsedTime)
-
-		l.WithFields(map[string]interface{}{
-			"elapsedTime": elapsedTime,
-			"reply":       reply.(*pb.SendEventResponse),
-		}).Debug("request processed")
-	}(time.Now())
-
-	if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
-		l.WithError(err).Error("error processing request")
-		metrics.ClientRequestsFailureCounter.WithLabelValues(
-			method,
-			event.Topic,
-			"0",
 			err.Error(),
-		).Inc()
+		).Observe(float64(time.Since(startTime).Milliseconds()))
 		return err
 	}
-	metrics.ClientRequestsSuccessCounter.WithLabelValues(
+	metrics.ClientRequestsResponseTime.WithLabelValues(
 		method,
 		event.Topic,
 		"0",
-	).Inc()
+		"ok",
+	).Observe(float64(time.Since(startTime).Milliseconds()))
 	return nil
 }
 

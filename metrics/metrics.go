@@ -43,7 +43,7 @@ var (
 			Help:      "the response time in ms of calls to server",
 			Buckets:   []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000},
 		},
-		[]string{"route", "topic", "retry"},
+		[]string{"route", "topic", "retry", "reason"},
 	)
 
 	// ClientRequestsSuccessCounter is the count of successfull calls to the server
