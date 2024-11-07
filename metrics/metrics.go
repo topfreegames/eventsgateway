@@ -26,11 +26,21 @@ import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 const metricsNamespace = "eventsgateway"
 const metricsSubsystem = "client_v4"
+
+const (
+	// LabelRoute is the GRPC route the request is reaching
+	LabelRoute = "route"
+	// LabelTopic is the Kafka topic the event refers to
+	LabelTopic = "topic"
+	// LabelStatus is the status of the request. OK if success or ERROR if fail
+	LabelStatus = "status"
+	// LabelRetry is the counter of the requests retries to EG server
+	LabelRetry = "retry"
+)
 
 var (
 
@@ -41,53 +51,41 @@ var (
 			Subsystem: metricsSubsystem,
 			Name:      "response_time_ms",
 			Help:      "the response time in ms of calls to server",
-			Buckets:   []float64{3, 5, 10, 50, 100, 300, 500, 1000, 5000},
+			Buckets:   []float64{10, 30, 50, 100, 500},
 		},
-		[]string{"route", "topic", "retry"},
+		[]string{LabelRoute, LabelTopic, LabelRetry, LabelStatus},
 	)
 
-	// ClientRequestsSuccessCounter is the count of successfull calls to the server
-	ClientRequestsSuccessCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// AsyncClientEventsCounter is the count of events broken by topic and status
+	AsyncClientEventsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
-		Name:      "requests_success_counter",
+		Name:      "async_events_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
-		[]string{"route", "topic", "retry"},
+		[]string{LabelTopic, LabelStatus},
 	)
 
-	// ClientRequestsFailureCounter is the count of failed calls to the server
-	ClientRequestsFailureCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// AsyncClientEventsBufferSize is the number of current events in the eventsChannel buffer
+	AsyncClientEventsBufferSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
-		Name:      "requests_failure_counter",
-		Help:      "the count of failed client requests to the server",
+		Name:      "async_events_buffer_size",
+		Help:      "the number of current events in the eventsChannel buffer in the async client",
 	},
-		[]string{"route", "topic", "retry", "reason"},
-	)
-
-	// AsyncClientRequestsDroppedCounter is the count of requests that were dropped due
-	// to req.Retry > maxRetries. Only available for Async mode
-	AsyncClientRequestsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "async_requests_dropped_counter",
-		Help:      "the count of dropped client async requests to the server",
-	},
-		[]string{"topic"},
+		[]string{LabelTopic},
 	)
 )
 
 // RegisterMetrics is a wrapper to handle prometheus.AlreadyRegisteredError;
 // it only returns an error if the metric wasn't already registered and there was an
 // actual error registering it.
-func RegisterMetrics(configPrefix string, config *viper.Viper) error {
+func RegisterMetrics() error {
 
 	collectors := []prometheus.Collector{
 		ClientRequestsResponseTime,
-		ClientRequestsSuccessCounter,
-		ClientRequestsFailureCounter,
-		AsyncClientRequestsDroppedCounter,
+		AsyncClientEventsCounter,
+		AsyncClientEventsBufferSize,
 	}
 
 	for _, collector := range collectors {

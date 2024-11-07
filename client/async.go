@@ -146,53 +146,42 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 	})
 
 	events := req.(*pb.SendEventsRequest).Events
+	topicName := events[0].Topic
 	retry := fmt.Sprintf("%d", req.(*pb.SendEventsRequest).Retry)
+	startTime := time.Now()
 
-	defer func(startTime time.Time) {
-		elapsedTime := float64(time.Now().UnixMilli() - startTime.UnixMilli())
-		for _, e := range events {
-			metrics.ClientRequestsResponseTime.WithLabelValues(
-				method,
-				e.Topic,
-				retry,
-			).Observe(elapsedTime)
-		}
-		l.WithFields(map[string]interface{}{
-			"elapsedTime": elapsedTime,
-			"reply":       reply.(*pb.SendEventsResponse),
-		}).Debug("request processed")
-	}(time.Now())
+	err := invoker(ctx, method, req, reply, cc, opts...)
 
-	if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
+	if err != nil {
 		l.WithError(err).Error("error processing request")
-		for _, e := range events {
-			metrics.ClientRequestsFailureCounter.WithLabelValues(
-				method,
-				e.Topic,
-				retry,
-				err.Error(),
-			).Inc()
-		}
+		metrics.ClientRequestsResponseTime.WithLabelValues(
+			method,
+			topicName,
+			retry,
+			err.Error(),
+		).Observe(float64(time.Since(startTime).Milliseconds()))
+		metrics.AsyncClientEventsCounter.WithLabelValues(
+			topicName,
+			"failed").Add(float64(len(events)))
 		return err
 	}
+	metrics.ClientRequestsResponseTime.WithLabelValues(
+		method,
+		topicName,
+		retry,
+		"ok",
+	).Observe(float64(time.Since(startTime).Milliseconds()))
+
 	failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
-	fC := 0
-	for i, e := range events {
-		if len(failureIndexes) > fC && int64(i) == failureIndexes[fC] {
-			metrics.ClientRequestsFailureCounter.WithLabelValues(
-				method,
-				e.Topic,
-				retry,
-				"couldn't produce event",
-			).Inc()
-			fC++
-		}
-		metrics.ClientRequestsSuccessCounter.WithLabelValues(
-			method,
-			e.Topic,
-			retry,
-		).Inc()
+	if len(failureIndexes) > 0 {
+		metrics.AsyncClientEventsCounter.WithLabelValues(
+			topicName,
+			"failed").Add(float64(len(failureIndexes)))
 	}
+	metrics.AsyncClientEventsCounter.WithLabelValues(
+		topicName,
+		"ok").Add(float64(len(events) - len(failureIndexes)))
+
 	return nil
 }
 
@@ -220,6 +209,8 @@ func (a *gRPCClientAsync) sendRoutine() {
 	for {
 		select {
 		case e := <-a.eventsChannel:
+			metrics.AsyncClientEventsBufferSize.WithLabelValues(
+				e.Topic).Set(float64(len(a.eventsChannel)))
 			if len(req.Events) == 0 {
 				a.wg.Add(1)
 			}
@@ -244,13 +235,13 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 		"size":       len(req.Events),
 	})
 	l.Debug("sending events")
+	topicName := req.Events[0].Topic
 	if retryCount > a.maxRetries {
 		l.Info("dropped events due to max retries")
-		for _, e := range req.Events {
-			metrics.AsyncClientRequestsDroppedCounter.WithLabelValues(
-				e.Topic,
-			).Inc()
-		}
+		metrics.AsyncClientEventsCounter.WithLabelValues(
+			topicName,
+			"dropped",
+		).Add(float64(len(req.Events)))
 		a.wg.Done()
 		return
 	}
@@ -272,13 +263,13 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 	if res != nil && len(res.FailureIndexes) != 0 {
 		l.WithFields(map[string]interface{}{
 			"failureIndexes": res.FailureIndexes,
-		}).Error("failed to send events")
+		}).Error("failed to send failedEvents")
 		time.Sleep(time.Duration(math.Pow(2, float64(retryCount))) * a.retryInterval)
-		events := make([]*pb.Event, 0, len(res.FailureIndexes))
+		failedEvents := make([]*pb.Event, 0, len(res.FailureIndexes))
 		for _, index := range res.FailureIndexes {
-			events = append(events, req.Events[index])
+			failedEvents = append(failedEvents, req.Events[index])
 		}
-		req.Events = events
+		req.Events = failedEvents
 		a.sendEvents(req, retryCount+1)
 		return
 	}

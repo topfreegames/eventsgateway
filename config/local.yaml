@@ -15,6 +15,10 @@ client:
   maxRetries: 3
   numRoutines: 2
   retryInterval: 2s
+  keepalive:
+    time: 60s
+    timeout: 15s
+    permitwithoutstreams: true
   grpc:
     serverAddress: eventsgateway-api:5000 #eventsgateway-api:5000
     timeout: 500ms

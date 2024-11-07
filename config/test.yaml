@@ -12,5 +12,5 @@ client:
   numRoutines: 1
   retryInterval: 1s
   grpc:
-    serveraddress: eventsgateway-api:5000
+    serverAddress: eventsgateway-api:5000
     timeoutms: 500ms

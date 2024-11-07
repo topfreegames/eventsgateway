@@ -53,10 +53,10 @@ var _ = Describe("Sync Client", func() {
 	initClient := func() {
 		var err error
 		config.Set("client.async", false)
-		c, err = client.NewClient(
+		c, err = client.New(
 			"",
 			config,
-			logger,
+			wrappedLogger,
 			nil,
 			grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
 		)

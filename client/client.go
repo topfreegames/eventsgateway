@@ -15,6 +15,7 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc/keepalive"
 	"strings"
 	"sync"
 	"time"
@@ -38,8 +39,6 @@ type Client struct {
 	serverAddress string
 }
 
-// NewClient ctor (DEPRECATED, use New() instead)
-// configPrefix is whatever comes before `client` subpart of config
 func NewClient(
 	configPrefix string,
 	config *viper.Viper,
@@ -62,20 +61,26 @@ func New(
 	if configPrefix != "" && !strings.HasSuffix(configPrefix, ".") {
 		configPrefix = strings.Join([]string{configPrefix, "."}, "")
 	}
+
 	c := &Client{
 		config: config,
 		logger: logger,
 	}
-	topicConf := fmt.Sprintf("%sclient.kafkatopic", configPrefix)
-	c.topic = c.config.GetString(topicConf)
-	if c.topic == "" {
-		return nil, fmt.Errorf("no kafka topic informed at %s", topicConf)
-	}
-	c.logger = c.logger.WithFields(map[string]interface{}{
-		"source": "eventsgateway/client",
-		"topic":  c.topic,
-	})
 	var err error
+
+	err = c.initConfig(configPrefix)
+	if err != nil {
+		return nil, err
+	}
+	err = metrics.RegisterMetrics()
+	if err != nil {
+		return nil, err
+	}
+
+	clientKeepaliveTime := c.config.GetDuration(fmt.Sprintf("%sclient.keepalive.time", configPrefix))
+	clientKeepaliveTimeout := c.config.GetDuration(fmt.Sprintf("%sclient.keepalive.timeout", configPrefix))
+	clientKeepalivePermitWithoutStreams := c.config.GetBool(fmt.Sprintf("%sclient.keepalive.permitwithoutstreams", configPrefix))
+	async := c.config.GetBool(fmt.Sprintf("%sclient.async", configPrefix))
 
 	dialOpts := append(
 		[]grpc.DialOption{
@@ -86,42 +91,65 @@ func New(
 				),
 				otgrpc.OpenTracingClientInterceptor(opentracing.GlobalTracer()),
 			),
+			grpc.WithKeepaliveParams(
+				keepalive.ClientParameters{
+					Time:                clientKeepaliveTime,
+					Timeout:             clientKeepaliveTimeout,
+					PermitWithoutStream: clientKeepalivePermitWithoutStreams,
+				}),
 		},
 		opts...,
 	)
 
-	if c.client, err = c.newGRPCClient(configPrefix, client, dialOpts...); err != nil {
+	c.logger = c.logger.WithFields(map[string]interface{}{
+		"serverAddress": c.serverAddress,
+		"async":         async,
+		"source":        "eventsgateway/client",
+		"topic":         c.topic,
+	})
+
+	if async {
+		c.client, err = newGRPCClientAsync(configPrefix, c.config, c.logger, c.serverAddress, client, dialOpts...)
+	} else {
+		c.client, err = newGRPCClientSync(configPrefix, c.config, c.logger, c.serverAddress, client, dialOpts...)
+	}
+
+	if err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func (c *Client) newGRPCClient(
-	configPrefix string,
-	client pb.GRPCForwarderClient,
-	opts ...grpc.DialOption,
-) (GRPCClient, error) {
-	serverConf := fmt.Sprintf("%sclient.grpc.serverAddress", configPrefix)
-	c.serverAddress = c.config.GetString(serverConf)
-	if c.serverAddress == "" {
-		return nil, fmt.Errorf("no grpc server address informed at %s", serverConf)
-	}
-	asyncConf := fmt.Sprintf("%sclient.async", configPrefix)
-	c.config.SetDefault(asyncConf, false)
-	async := c.config.GetBool(asyncConf)
-	c.logger = c.logger.WithFields(map[string]interface{}{
-		"serverAddress": c.serverAddress,
-		"async":         async,
-	})
-	err := metrics.RegisterMetrics(configPrefix, c.config)
-	if err != nil {
-		return nil, err
+func (c *Client) initConfig(configPrefix string) error {
+
+	keepaliveTime, _ := time.ParseDuration("60s")
+	keepaliveTimeout, _ := time.ParseDuration("15s")
+	lingerInterval, _ := time.ParseDuration("500ms")
+	retryInterval, _ := time.ParseDuration("2s")
+
+	topicConfigKey := fmt.Sprintf("%sclient.kafkatopic", configPrefix)
+	c.topic = c.config.GetString(topicConfigKey)
+	if c.topic == "" {
+		return fmt.Errorf("no kafka topic informed at %s", topicConfigKey)
 	}
 
-	if async {
-		return newGRPCClientAsync(configPrefix, c.config, c.logger, c.serverAddress, client, opts...)
+	serverAddressKey := fmt.Sprintf("%sclient.grpc.serverAddress", configPrefix)
+	c.serverAddress = c.config.GetString(serverAddressKey)
+	if c.serverAddress == "" {
+		return fmt.Errorf("no grpc server address informed at %s", serverAddressKey)
 	}
-	return newGRPCClientSync(configPrefix, c.config, c.logger, c.serverAddress, client, opts...)
+
+	c.config.SetDefault(fmt.Sprintf("%sclient.keepalive.time", configPrefix), keepaliveTime)
+	c.config.SetDefault(fmt.Sprintf("%sclient.keepalive.timeout", configPrefix), keepaliveTimeout)
+	c.config.SetDefault(fmt.Sprintf("%sclient.keepalive.permitwithoutstreams", configPrefix), true)
+	c.config.SetDefault(fmt.Sprintf("%sclient.channelBuffer", configPrefix), 500)
+	c.config.SetDefault(fmt.Sprintf("%sclient.lingerInterval", configPrefix), lingerInterval)
+	c.config.SetDefault(fmt.Sprintf("%sclient.batchSize", configPrefix), 50)
+	c.config.SetDefault(fmt.Sprintf("%sclient.maxRetries", configPrefix), 3)
+	c.config.SetDefault(fmt.Sprintf("%sclient.numRoutines", configPrefix), 2)
+	c.config.SetDefault(fmt.Sprintf("%sclient.retryInterval", configPrefix), retryInterval)
+
+	return nil
 }
 
 // Send sends an event to another server via grpc using the client's configured topic
