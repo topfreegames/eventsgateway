@@ -26,7 +26,6 @@ import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 const metricsNamespace = "eventsgateway"
@@ -92,7 +91,7 @@ var (
 // RegisterMetrics is a wrapper to handle prometheus.AlreadyRegisteredError;
 // it only returns an error if the metric wasn't already registered and there was an
 // actual error registering it.
-func RegisterMetrics(configPrefix string, config *viper.Viper) error {
+func RegisterMetrics() error {
 
 	collectors := []prometheus.Collector{
 		ClientRequestsResponseTime,
