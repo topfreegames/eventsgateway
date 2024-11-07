@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
+	logruswrapper "github.com/topfreegames/eventsgateway/v4/logger/logrus"
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 	"google.golang.org/grpc"
 )
@@ -36,6 +37,16 @@ type Client struct {
 	topic         string
 	wg            sync.WaitGroup
 	serverAddress string
+}
+
+func NewClient(
+	configPrefix string,
+	config *viper.Viper,
+	logger logrus.FieldLogger,
+	client pb.GRPCForwarderClient,
+	opts ...grpc.DialOption,
+) (*Client, error) {
+	return New(configPrefix, config, logruswrapper.NewWithLogger(logger), client, opts...)
 }
 
 // New ctor
