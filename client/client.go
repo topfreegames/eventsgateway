@@ -15,6 +15,7 @@ import (
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc/keepalive"
 	"strings"
 	"sync"
 	"time"
@@ -68,6 +69,10 @@ func New(
 	}
 	topicConf := fmt.Sprintf("%sclient.kafkatopic", configPrefix)
 	c.topic = c.config.GetString(topicConf)
+	clientKeepaliveTime := c.config.GetDuration(fmt.Sprintf("%sclient.keepalive.time", configPrefix))
+	clientKeepaliveTimeout := c.config.GetDuration(fmt.Sprintf("%sclient.keepalive.timeout", configPrefix))
+	clientKeepalivePermitWithoutStreams := c.config.GetBool(fmt.Sprintf("%sclient.keepalive.permitwithoutstreams", configPrefix))
+
 	if c.topic == "" {
 		return nil, fmt.Errorf("no kafka topic informed at %s", topicConf)
 	}
@@ -86,6 +91,12 @@ func New(
 				),
 				otgrpc.OpenTracingClientInterceptor(opentracing.GlobalTracer()),
 			),
+			grpc.WithKeepaliveParams(
+				keepalive.ClientParameters{
+					Time:                clientKeepaliveTime,
+					Timeout:             clientKeepaliveTimeout,
+					PermitWithoutStream: clientKeepalivePermitWithoutStreams,
+				}),
 		},
 		opts...,
 	)
