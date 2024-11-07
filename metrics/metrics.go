@@ -56,33 +56,22 @@ var (
 		[]string{LabelRoute, LabelTopic, LabelRetry, LabelStatus},
 	)
 
-	// ClientEventsCounter is the count of events broken by topic and status
-	ClientEventsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// AsyncClientEventsCounter is the count of events broken by topic and status
+	AsyncClientEventsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
-		Name:      "events_counter",
+		Name:      "async_events_counter",
 		Help:      "the count of successfull client requests to the server",
 	},
-		[]string{LabelRoute, LabelTopic, LabelStatus},
+		[]string{LabelTopic, LabelStatus},
 	)
 
-	// AsyncClientEventsChannelLength is the number of current events in the eventsChannel buffer
-	AsyncClientEventsChannelLength = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	// AsyncClientEventsBufferSize is the number of current events in the eventsChannel buffer
+	AsyncClientEventsBufferSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
-		Name:      "async_events_channel_length",
+		Name:      "async_events_buffer_size",
 		Help:      "the number of current events in the eventsChannel buffer in the async client",
-	},
-		[]string{LabelTopic},
-	)
-
-	// AsyncClientEventsDroppedCounter is the count of requests that were dropped due
-	// to req.Retry > maxRetries. Only available for Async mode
-	AsyncClientEventsDroppedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "async_events_dropped_counter",
-		Help:      "the count of dropped client async requests to the server",
 	},
 		[]string{LabelTopic},
 	)
@@ -95,9 +84,8 @@ func RegisterMetrics() error {
 
 	collectors := []prometheus.Collector{
 		ClientRequestsResponseTime,
-		ClientEventsCounter,
-		AsyncClientEventsDroppedCounter,
-		AsyncClientEventsChannelLength,
+		AsyncClientEventsCounter,
+		AsyncClientEventsBufferSize,
 	}
 
 	for _, collector := range collectors {

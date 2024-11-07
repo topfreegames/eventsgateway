@@ -160,8 +160,7 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 			retry,
 			err.Error(),
 		).Observe(float64(time.Since(startTime).Milliseconds()))
-		metrics.ClientEventsCounter.WithLabelValues(
-			method,
+		metrics.AsyncClientEventsCounter.WithLabelValues(
 			topicName,
 			"failed").Add(float64(len(events)))
 		return err
@@ -175,13 +174,11 @@ func (a *gRPCClientAsync) metricsReporterInterceptor(
 
 	failureIndexes := reply.(*pb.SendEventsResponse).FailureIndexes
 	if len(failureIndexes) > 0 {
-		metrics.ClientEventsCounter.WithLabelValues(
-			method,
+		metrics.AsyncClientEventsCounter.WithLabelValues(
 			topicName,
 			"failed").Add(float64(len(failureIndexes)))
 	}
-	metrics.ClientEventsCounter.WithLabelValues(
-		method,
+	metrics.AsyncClientEventsCounter.WithLabelValues(
 		topicName,
 		"ok").Add(float64(len(events) - len(failureIndexes)))
 
@@ -212,7 +209,7 @@ func (a *gRPCClientAsync) sendRoutine() {
 	for {
 		select {
 		case e := <-a.eventsChannel:
-			metrics.AsyncClientEventsChannelLength.WithLabelValues(
+			metrics.AsyncClientEventsBufferSize.WithLabelValues(
 				e.Topic).Set(float64(len(a.eventsChannel)))
 			if len(req.Events) == 0 {
 				a.wg.Add(1)
@@ -241,8 +238,9 @@ func (a *gRPCClientAsync) sendEvents(req *pb.SendEventsRequest, retryCount int) 
 	topicName := req.Events[0].Topic
 	if retryCount > a.maxRetries {
 		l.Info("dropped events due to max retries")
-		metrics.AsyncClientEventsDroppedCounter.WithLabelValues(
+		metrics.AsyncClientEventsCounter.WithLabelValues(
 			topicName,
+			"dropped",
 		).Add(float64(len(req.Events)))
 		a.wg.Done()
 		return
