@@ -84,7 +84,7 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("kafka.producer.idempotent", false)
 	a.config.SetDefault("kafka.producer.net.keepAlive", "60s")
 	a.config.SetDefault("kafka.producer.brokers", "localhost:9192")
-	a.config.SetDefault("kafka.producer.maxMessageBytes", 1000000)
+	a.config.SetDefault("kafka.producer.maxMessageBytes", 5242880)
 	a.config.SetDefault("kafka.producer.timeout", "250ms")
 	a.config.SetDefault("kafka.producer.batch.size", 1000000)
 	a.config.SetDefault("kafka.producer.linger.ms", 1)
@@ -165,7 +165,7 @@ func (a *App) configureEventsForwarder() error {
 	if err != nil {
 		return err
 	}
-	kafkaSender := sender.NewKafkaSender(k, a.log)
+	kafkaSender := sender.NewKafkaSender(k, a.log, a.config)
 	a.Server = NewServer(kafkaSender, a.log)
 	return nil
 }

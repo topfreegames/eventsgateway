@@ -10,9 +10,12 @@ package sender
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/spf13/viper"
 	avro "github.com/topfreegames/avro/go/eventsgateway/generated"
 	"github.com/topfreegames/eventsgateway/v4/server/forwarder"
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
@@ -25,13 +28,15 @@ import (
 type KafkaSender struct {
 	logger   logger.Logger
 	producer forwarder.Forwarder
+	config   *viper.Viper
 }
 
 func NewKafkaSender(
 	producer forwarder.Forwarder,
 	logger logger.Logger,
+	config *viper.Viper,
 ) *KafkaSender {
-	k := &KafkaSender{producer: producer, logger: logger}
+	k := &KafkaSender{producer: producer, logger: logger, config: config}
 	return k
 }
 
@@ -68,6 +73,13 @@ func (k *KafkaSender) SendEvent(
 	event *pb.Event,
 ) error {
 	startTime := time.Now()
+	maxMessageBytes := k.config.GetInt("kafka.producer.maxMessageBytes")
+
+	if event.XXX_Size() >= maxMessageBytes {
+		err := errors.New(fmt.Sprintf("Event size exceeds kafka.producer.maxMessageBytes %d bytes. Got %d bytes", maxMessageBytes, event.XXX_Size()))
+		k.logger.WithError(err).Error("Failed to send event")
+		return err
+	}
 
 	l := k.logger.WithFields(map[string]interface{}{
 		"topic": event.GetTopic(),

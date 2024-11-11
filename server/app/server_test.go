@@ -6,6 +6,9 @@ package app_test
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"github.com/spf13/viper"
+	"strings"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -17,6 +20,21 @@ import (
 	pb "github.com/topfreegames/protos/eventsgateway/grpc/generated"
 )
 
+func initConfig() *viper.Viper {
+	config = viper.New()
+	config.SetConfigFile("../config/test.yaml")
+	config.SetConfigType("yaml")
+	config.SetEnvPrefix("eventsgateway")
+	config.AddConfigPath(".")
+	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	config.AutomaticEnv()
+
+	if err := config.ReadInConfig(); err != nil {
+		fmt.Printf("Error loading config file: %s\n", config.ConfigFileUsed())
+	}
+	return config
+}
+
 var _ = Describe("Client", func() {
 	var (
 		s     *app.Server
@@ -25,7 +43,7 @@ var _ = Describe("Client", func() {
 
 	BeforeEach(func() {
 		nowMs = time.Now().UnixNano() / 1000000
-		sender := sender.NewKafkaSender(mockForwarder, log)
+		sender := sender.NewKafkaSender(mockForwarder, log, initConfig())
 		s = app.NewServer(sender, log)
 		Expect(s).NotTo(BeNil())
 	})
@@ -146,6 +164,39 @@ var _ = Describe("Client", func() {
 			res, err := s.SendEvent(ctx, e)
 			Expect(res).NotTo(BeNil())
 			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should fail send exceeds message size", func() {
+			msg := []string{"a", "a"}
+			for _ = range 30000 {
+				msg = append(msg, "a")
+			}
+
+			ctx := context.Background()
+			e := &pb.Event{
+				Id:    "someid",
+				Name:  "someName",
+				Topic: "sv-uploads-sometopic",
+				Props: map[string]string{
+					"bigmessage": strings.Join(msg, ""),
+				},
+				Timestamp: nowMs,
+			}
+
+			mockForwarder.EXPECT().Produce(gomock.Eq("sv-uploads-sometopic"), gomock.Any()).Do(
+				func(topic string, aevent []byte) {
+					r := bytes.NewReader(aevent)
+					ev, err := avro.DeserializeEvent(r)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ev.Id).To(Equal(e.GetId()))
+					Expect(ev.Name).To(Equal(e.GetName()))
+					Expect(ev.ClientTimestamp).To(Equal(e.GetTimestamp()))
+					Expect(ev.ServerTimestamp).To(BeNumerically("~", nowMs, 10))
+				})
+
+			res, err := s.SendEvent(ctx, e)
+			Expect(res).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Event size exceeds kafka.producer.maxMessageBytes 30000 bytes. Got 30069 bytes"))
 		})
 	})
 })
