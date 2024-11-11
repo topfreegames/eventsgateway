@@ -166,9 +166,9 @@ var _ = Describe("Client", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("should fail send exceeds message size", func() {
-			msg := []string{"a", "a"}
+			msg := "a"
 			for _ = range 30000 {
-				msg = append(msg, "a")
+				msg += "a"
 			}
 
 			ctx := context.Background()
@@ -177,7 +177,7 @@ var _ = Describe("Client", func() {
 				Name:  "someName",
 				Topic: "sv-uploads-sometopic",
 				Props: map[string]string{
-					"bigmessage": strings.Join(msg, ""),
+					"bigmessage": msg,
 				},
 				Timestamp: nowMs,
 			}
@@ -196,7 +196,7 @@ var _ = Describe("Client", func() {
 			res, err := s.SendEvent(ctx, e)
 			Expect(res).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Event size exceeds kafka.producer.maxMessageBytes 30000 bytes. Got 30069 bytes"))
+			Expect(err.Error()).To(Equal("Event size exceeds kafka.producer.maxMessageBytes 30000 bytes. Got 30068 bytes"))
 		})
 	})
 })
