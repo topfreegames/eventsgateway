@@ -192,7 +192,7 @@ func (a *App) metricsReporterInterceptor(
 		a.log.WithField("route", info.FullMethod).Infof("Unexpected request type %T", t)
 	}
 
-	topic := events[0].Topic
+	topic := fmt.Sprintf("%s%s", a.config.GetString("kafka.producer.topicPrefix"), events[0].Topic)
 	metrics.APIPayloadSize.WithLabelValues(
 		topic).Observe(float64(payloadSize))
 
