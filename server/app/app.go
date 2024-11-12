@@ -165,7 +165,7 @@ func (a *App) configureEventsForwarder() error {
 	if err != nil {
 		return err
 	}
-	kafkaSender := sender.NewKafkaSender(k, a.log)
+	kafkaSender := sender.NewKafkaSender(k, a.log, a.config)
 	a.Server = NewServer(kafkaSender, a.log)
 	return nil
 }
