@@ -83,7 +83,6 @@ func RegisterMetrics(collectors []prometheus.Collector) error {
 			}
 		}
 	}
-
 	return nil
 }
 

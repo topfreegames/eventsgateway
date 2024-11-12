@@ -25,7 +25,6 @@ package metrics
 import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 const metricsNamespace = "eventsgateway"
@@ -91,7 +90,6 @@ func RegisterMetrics() error {
 	for _, collector := range collectors {
 		err := prometheus.Register(collector)
 		if err != nil {
-			logrus.New().Warnf("Error while registering EG metrics: %s", err)
 			var alreadyRegisteredError prometheus.AlreadyRegisteredError
 			if !errors.As(err, &alreadyRegisteredError) {
 				return err
