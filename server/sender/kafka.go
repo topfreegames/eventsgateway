@@ -119,14 +119,15 @@ func (k *KafkaSender) SendEvent(
 	topic := event.GetTopic()
 	partition, offset, err := k.producer.Produce(ctx, topic, buf.Bytes())
 
+	topicFullName := fmt.Sprintf("%s%s", k.config.GetString("kafka.producer.topicPrefix"), topic)
 	kafkaStatus := "ok"
 	if err != nil {
 		kafkaStatus = "error"
 		l.WithError(err).Error("error producing event to kafka")
-		metrics.KafkaRequestLatency.WithLabelValues(kafkaStatus, topic).Observe(float64(time.Since(startTime).Milliseconds()))
+		metrics.KafkaRequestLatency.WithLabelValues(kafkaStatus, topicFullName).Observe(float64(time.Since(startTime).Milliseconds()))
 		return err
 	}
-	metrics.KafkaRequestLatency.WithLabelValues(kafkaStatus, topic).Observe(float64(time.Since(startTime).Milliseconds()))
+	metrics.KafkaRequestLatency.WithLabelValues(kafkaStatus, topicFullName).Observe(float64(time.Since(startTime).Milliseconds()))
 	l.WithFields(map[string]interface{}{
 		"partition": partition,
 		"offset":    offset,
