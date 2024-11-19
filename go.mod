@@ -1,6 +1,6 @@
 module github.com/topfreegames/eventsgateway/v4
 
-go 1.17
+go 1.20
 
 require (
 	github.com/Shopify/sarama v1.35.0
