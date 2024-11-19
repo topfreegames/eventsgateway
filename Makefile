@@ -65,10 +65,6 @@ copy-integration-cover:
 	@mkdir -p _build
 	@cp ./coverprofile.out _build/coverage-integration.out
 
-merge-profiles:
-	@mkdir -p _build
-	@${GOBIN}/gocovmerge _build/*.out > _build/coverage-all.out
-
 print-unit-section:
 	@echo
 	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
@@ -81,12 +77,14 @@ print-integration-section:
 	@echo "=     Integration Tests     ="
 	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
 
-test-coverage-func: merge-profiles
+test-coverage-func: 
 	@echo
-	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-	@echo "Functions NOT COVERED by Tests  ="
-	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-	@go tool cover -func=_build/coverage-all.out | egrep -v "100.0[%]"
-
-test-coverage-html cover:
-	@go tool cover -html=_build/coverage-all.out
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+	@echo "Functions NOT COVERED by UNIT Tests ="
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+	@go tool cover -func=_build/coverage-unit.out | egrep -v "100.0[%]"
+	@echo
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+	@echo "Functions NOT COVERED by INTEGRATION Tests ="
+	@echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+	@go tool cover -func=_build/coverage-integration.out | egrep -v "100.0[%]"

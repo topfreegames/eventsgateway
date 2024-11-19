@@ -24,8 +24,9 @@ package tools
 
 import (
 	"context"
-	"github.com/topfreegames/eventsgateway/v4/client"
 	"time"
+
+	"github.com/topfreegames/eventsgateway/v4/client"
 
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"

@@ -25,6 +25,14 @@ package tools
 import (
 	"context"
 	"fmt"
+	"io"
+	"math/rand"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -37,13 +45,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-	"io"
-	"math/rand"
-	"net/http"
-	"os"
-	"os/signal"
-	"sync"
-	"time"
 
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"

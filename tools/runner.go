@@ -24,9 +24,10 @@ package tools
 
 import (
 	"context"
-	"github.com/opentracing/opentracing-go"
 	"math/rand"
 	"time"
+
+	"github.com/opentracing/opentracing-go"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"

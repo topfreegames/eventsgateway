@@ -8,8 +8,9 @@
 package testing
 
 import (
-	"github.com/spf13/viper"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 // GetDefaultConfig returns the configuration at ./config/test.yaml
