@@ -263,6 +263,7 @@ func (a *App) Run() {
 	defer func() {
 		a.log.Info("Calling GRPC Gracefull stop...")
 		a.grpcServer.GracefulStop()
+		a.log.Info("Finished GRPC Gracefull stop...")
 	}()
 	select {
 	case err := <-errChan:
