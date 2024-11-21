@@ -28,6 +28,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -250,7 +251,7 @@ func (a *App) Run() {
 	pb.RegisterGRPCForwarderServer(a.grpcServer, a.Server)
 	var stopChan = make(chan os.Signal, 2)
 
-	signal.Notify(stopChan)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 	var errChan = make(chan error)
 
 	go func() {
