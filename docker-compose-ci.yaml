@@ -37,6 +37,7 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    stop_grace_period: 30s
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "5000" ]
       interval: 5s
