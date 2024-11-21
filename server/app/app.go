@@ -26,6 +26,9 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -75,7 +78,7 @@ func NewApp(host string, port int, log logger.Logger, config *viper.Viper) (*App
 	return a, err
 }
 
-func (a *App) loadConfigurationDefaults() {
+func (a *App) configure() error {
 	a.config.SetDefault("otlp.enabled", false)
 	a.config.SetDefault("kafka.producer.net.maxOpenRequests", 10)
 	a.config.SetDefault("kafka.producer.net.dialTimeout", "500ms")
@@ -98,10 +101,6 @@ func (a *App) loadConfigurationDefaults() {
 	a.config.SetDefault("server.Timeout", "500ms")
 	a.config.SetDefault("prometheus.enabled", "true") // always true on the API side
 	a.config.SetDefault("prometheus.port", ":9091")
-}
-
-func (a *App) configure() error {
-	a.loadConfigurationDefaults()
 
 	if a.config.GetBool("otlp.enabled") {
 		if err := a.configureOTel(); err != nil {
@@ -222,12 +221,12 @@ func (a *App) metricsReporterInterceptor(
 
 // Run runs the app
 func (a *App) Run() {
-	log := a.log
+
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", a.host, a.port))
 	if err != nil {
-		log.Panic(err.Error())
+		a.log.Panic(err.Error())
 	}
-	log.Infof("events gateway listening on %s:%d", a.host, a.port)
+	a.log.Infof("events gateway listening on %s:%d", a.host, a.port)
 
 	metrics.StartServer(a.config)
 	var opts []grpc.ServerOption
@@ -250,11 +249,26 @@ func (a *App) Run() {
 	a.grpcServer = grpc.NewServer(opts...)
 
 	pb.RegisterGRPCForwarderServer(a.grpcServer, a.Server)
-	if err := a.grpcServer.Serve(listener); err != nil {
-		log.Panic(err.Error())
-	}
-}
+	var stopChan = make(chan os.Signal, 2)
 
-func (a *App) Stop() {
-	a.grpcServer.GracefulStop()
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
+	var errChan = make(chan error)
+
+	go func() {
+		if err := a.grpcServer.Serve(listener); err != nil {
+			errChan <- err
+		}
+	}()
+
+	defer func() {
+		a.log.Info("Calling GRPC Gracefull stop...")
+		a.grpcServer.GracefulStop()
+		a.log.Info("Finished GRPC Gracefull stop...")
+	}()
+	select {
+	case err := <-errChan:
+		a.log.Panicf("Server failed with error: %s", err.Error())
+	case sig := <-stopChan:
+		a.log.Infof("Got signal %s from OS. Stopping...", sig)
+	}
 }
