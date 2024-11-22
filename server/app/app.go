@@ -39,6 +39,10 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 
+	// Installing the gzip encoding registers it as an available compressor.
+	// gRPC will automatically negotiate and use gzip if the client supports it.
+	_ "google.golang.org/grpc/encoding/gzip"
+
 	goMetrics "github.com/rcrowley/go-metrics"
 	"github.com/topfreegames/eventsgateway/v4/server/logger"
 	"github.com/topfreegames/eventsgateway/v4/server/metrics"
