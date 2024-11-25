@@ -261,10 +261,10 @@ func (a *App) Run() {
 	}()
 
 	defer func() {
-		gracefullShutdowDuration := a.config.GetDuration("server.maxConnectionAge") + a.config.GetDuration("server.maxConnectionAgeGrace")
-		a.log.Infof("Waiting %s for graceful stop...", gracefullShutdowDuration)
-		time.Sleep(gracefullShutdowDuration)
+		gracefulShutdowDuration := a.config.GetDuration("server.maxConnectionAge") + a.config.GetDuration("server.maxConnectionAgeGrace")
+		a.log.Infof("Waiting %s for graceful stop...", gracefulShutdowDuration)
 		a.grpcServer.GracefulStop()
+		time.Sleep(gracefulShutdowDuration)
 		a.log.Info("Finished GRPC graceful stop...")
 	}()
 	select {
