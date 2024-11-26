@@ -261,14 +261,16 @@ func (a *App) Run() {
 	}()
 
 	defer func() {
-		a.log.Info("Calling GRPC Gracefull stop...")
+		gracefulShutdowDuration := a.config.GetDuration("server.maxConnectionAge") + a.config.GetDuration("server.maxConnectionAgeGrace")
+		a.log.Infof("Waiting %s for graceful stop...", gracefulShutdowDuration)
 		a.grpcServer.GracefulStop()
-		a.log.Info("Finished GRPC Gracefull stop...")
+		time.Sleep(gracefulShutdowDuration)
+		a.log.Info("Finished GRPC graceful stop...")
 	}()
 	select {
 	case err := <-errChan:
 		a.log.Panicf("Server failed with error: %s", err.Error())
 	case sig := <-stopChan:
-		a.log.Infof("Got signal %s from OS. Stopping...", sig)
+		a.log.Infof("Got signal %s from OS. Stopping server...", sig)
 	}
 }
