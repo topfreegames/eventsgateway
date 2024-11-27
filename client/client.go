@@ -10,15 +10,17 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/topfreegames/eventsgateway/v4/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
-	"strings"
-	"sync"
-	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
@@ -100,6 +102,11 @@ func New(
 		},
 		opts...,
 	)
+
+	gzipEnabled := c.config.GetBool(fmt.Sprintf("%sclient.gzip.enabled", configPrefix))
+	if gzipEnabled {
+		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)))
+	}
 
 	c.logger = c.logger.WithFields(map[string]interface{}{
 		"serverAddress": c.serverAddress,

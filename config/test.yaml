@@ -11,6 +11,8 @@ client:
   maxRetries: 3
   numRoutines: 1
   retryInterval: 1s
+  gzip:
+    enabled: false
   grpc:
     serverAddress: eventsgateway-api:5000
     timeoutms: 500ms

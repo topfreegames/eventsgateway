@@ -19,6 +19,8 @@ client:
     time: 60s
     timeout: 15s
     permitwithoutstreams: true
+  gzip:
+    enabled: false
   grpc:
     serverAddress: eventsgateway-api:5000 #eventsgateway-api:5000
     timeout: 500ms
