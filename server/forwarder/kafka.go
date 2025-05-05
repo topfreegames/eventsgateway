@@ -3,14 +3,15 @@ package forwarder
 import (
 	"context"
 	"fmt"
-	"github.com/IBM/sarama"
-	"github.com/spf13/viper"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"log"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/IBM/sarama"
+	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type KafkaForwarder struct {
@@ -40,7 +41,7 @@ func NewKafkaForwarder(config *viper.Viper) (*KafkaForwarder, error) {
 	kafkaConf.Producer.RequiredAcks = sarama.WaitForLocal
 	kafkaConf.Producer.Compression = sarama.CompressionSnappy
 	kafkaConf.ClientID = config.GetString("kafka.producer.clientId")
-	kafkaConf.Version = sarama.V2_2_0_0
+	kafkaConf.Version = sarama.V3_7_1_0
 
 	brokers := strings.Split(config.GetString("kafka.producer.brokers"), ",")
 	producer, err := sarama.NewSyncProducer(brokers, kafkaConf)
