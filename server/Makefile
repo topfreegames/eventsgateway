@@ -16,7 +16,7 @@ build-dev:
 
 deps-start:
 	@docker compose -f ../docker-compose.yaml up -d \
-		zookeeper kafka jaeger
+		kafka jaeger
 
 deps-stop:
 	@docker compose -f ../docker-compose.yaml down
