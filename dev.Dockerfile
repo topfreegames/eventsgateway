@@ -1,5 +1,5 @@
 # Can have a different base image from the server.
-FROM golang:1.17-alpine
+FROM golang:1.24-alpine
 
 WORKDIR /app
 
