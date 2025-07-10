@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
@@ -227,8 +227,9 @@ func (c *Client) GracefulStop() error {
 }
 
 func buildEvent(name string, props map[string]string, topic string, time time.Time) *pb.Event {
+	uuidV4, _ := uuid.NewV4()
 	return &pb.Event{
-		Id:        uuid.NewV4().String(),
+		Id:        uuidV4.String(),
 		Name:      name,
 		Topic:     topic,
 		Props:     props,

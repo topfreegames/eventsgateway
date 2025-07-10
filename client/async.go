@@ -10,12 +10,13 @@ package client
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc/credentials/insecure"
 	"math"
 	"sync"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"google.golang.org/grpc/credentials/insecure"
+
+	uuid "github.com/gofrs/uuid/v5"
 	"github.com/spf13/viper"
 	"github.com/topfreegames/eventsgateway/v4/logger"
 	"github.com/topfreegames/eventsgateway/v4/metrics"
@@ -200,7 +201,8 @@ func (a *gRPCClientAsync) sendRoutine() {
 
 	send := func() {
 		cpy := req
-		cpy.Id = uuid.NewV4().String()
+		uuidV4, _ := uuid.NewV4()
+		cpy.Id = uuidV4.String()
 		req = &pb.SendEventsRequest{}
 		req.Events = make([]*pb.Event, 0, a.batchSize)
 		go a.sendEvents(cpy, 0)
