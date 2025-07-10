@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/Shopify/sarama v1.35.0
+	github.com/gofrs/uuid/v5 v5.3.2
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
@@ -12,7 +13,6 @@ require (
 	github.com/onsi/gomega v1.20.0
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v0.0.1
 	github.com/spf13/viper v1.3.2
