@@ -86,11 +86,13 @@ func New(
 
 	dialOpts := append(
 		[]grpc.DialOption{
-			grpc.WithChainUnaryInterceptor(
-				otelgrpc.UnaryClientInterceptor(
+			grpc.WithStatsHandler(
+				otelgrpc.NewClientHandler(
 					otelgrpc.WithPropagators(otel.GetTextMapPropagator()),
 					otelgrpc.WithTracerProvider(otel.GetTracerProvider()),
 				),
+			),
+			grpc.WithUnaryInterceptor(
 				otgrpc.OpenTracingClientInterceptor(opentracing.GlobalTracer()),
 			),
 			grpc.WithKeepaliveParams(
