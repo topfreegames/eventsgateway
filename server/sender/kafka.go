@@ -47,10 +47,11 @@ func (k *KafkaSender) SendEvents(
 ) []int64 {
 	wg := sync.WaitGroup{}
 	wg.Add(len(events))
-	failureIndexes := make([]int64, 0, len(events))
+	failed := make([]bool, len(events))
 	for i := range events {
 		j := i
 		go func() {
+			defer wg.Done()
 			if err := k.SendEvent(ctx, events[j]); err != nil {
 				k.logger.
 					WithError(err).
@@ -58,12 +59,17 @@ func (k *KafkaSender) SendEvents(
 					WithField("eventName", events[j].GetName()).
 					WithField("eventID", events[j].GetId()).
 					Error("failed to send event to kafka")
-				failureIndexes = append(failureIndexes, int64(j))
+				failed[j] = true
 			}
-			wg.Done()
 		}()
 	}
 	wg.Wait()
+	failureIndexes := make([]int64, 0, len(events))
+	for i, f := range failed {
+		if f {
+			failureIndexes = append(failureIndexes, int64(i))
+		}
+	}
 	return failureIndexes
 }
 
