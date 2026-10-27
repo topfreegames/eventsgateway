@@ -19,7 +19,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-FROM golang:1.22-alpine AS build-env
+FROM golang:1.27.3-alpine AS build-env
 
 MAINTAINER TFG Co <backend@tfgco.com>
 
@@ -33,7 +33,9 @@ RUN apk add --no-cache make git g++ && \
     mv bin/eventsgateway /app/eventsgateway && \
     mv config /app/config
 
-FROM alpine:3.9
+FROM alpine:3.24
+
+RUN apk add --no-cache --upgrade ca-certificates
 
 WORKDIR /app
 
